@@ -1,0 +1,9 @@
+/node_modules/
+/secrets.json
+/artifacts/
+/cache/
+/.idea/.gitignore
+/.idea/GameFi.iml
+/.idea/modules.xml
+/.openzeppelin/unknown-31337.json
+/.idea/vcs.xml
