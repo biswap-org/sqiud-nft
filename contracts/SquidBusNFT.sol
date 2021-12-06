@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -16,11 +16,11 @@ contract SquidBusNFT is
 
     uint public minBusBalance; // min bus balance by user on start
     uint public maxBusBalance; // max bus balance after bus addition period
-    uint public busAdditionPeriod; // bus addition period in days (add 1 bus available to mint after period)
+    uint public busAdditionPeriod; // bus addition period in seconds (add 1 bus available to mint after each period)
 
     string private internalBaseURI;
     uint private lastTokenId;
-    uint private maxBusLevel;
+    uint private maxBusLevel; // maximum bus capacity
 
     struct Token {
         uint level; //how many players can fit on the bus
@@ -52,7 +52,7 @@ contract SquidBusNFT is
         maxBusLevel = _maxBusLevel; // 5
         minBusBalance = _minBusBalance; // 2
         maxBusBalance = _maxBusBalance; // 5
-        busAdditionPeriod = _busAdditionPeriod; // 7
+        busAdditionPeriod = _busAdditionPeriod; // 604800 for 7 days
 
         emit Initialize(baseURI);
     }
@@ -65,6 +65,9 @@ contract SquidBusNFT is
         uint _maxBusBalance,
         uint _busAdditionPeriod
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_maxBusLevel > 0, "maxBusLevel must be > 0");
+        require(_maxBusBalance > _minBusBalance, "maxBusBalance must be > minBusBalance");
+        require(_busAdditionPeriod > 0, "busAdditionPeriod must be > 0");
         maxBusLevel = _maxBusLevel;
         minBusBalance = _minBusBalance;
         maxBusBalance = _maxBusBalance;
@@ -73,11 +76,6 @@ contract SquidBusNFT is
 
     function setBaseURI(string calldata newBaseUri) external onlyRole(DEFAULT_ADMIN_ROLE) {
         internalBaseURI = newBaseUri;
-    }
-
-    function setMaxBusLevel(uint _level) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_level > 0, "Volume must be > 0");
-        maxBusLevel = _level;
     }
 
     //Public functions --------------------------------------------------------------------------------------------
@@ -134,11 +132,19 @@ contract SquidBusNFT is
     function allowedBusBalance(address _user) public view returns (uint) {
         if (firstBusTimestamp[_user] == 0) return minBusBalance;
 
-        uint passedTime = (block.timestamp - firstBusTimestamp[_user]) / 86400;
+        uint passedTime = (block.timestamp - firstBusTimestamp[_user]);
         uint additionalQuantity = passedTime / busAdditionPeriod;
         return (
             (minBusBalance + additionalQuantity) > maxBusBalance ? maxBusBalance : (minBusBalance + additionalQuantity)
         );
+    }
+
+    function secToNextBus(address _user) public view returns(uint) {
+        if (firstBusTimestamp[_user] == 0 || allowedBusBalance(_user) >= maxBusBalance) return 0;
+        uint passedTime = (block.timestamp - firstBusTimestamp[_user]);
+        uint timeLeft = (passedTime / busAdditionPeriod + 1) * busAdditionPeriod - passedTime;
+
+        return timeLeft;
     }
 
     function allowedUserToMintBus(address _user) public view returns(bool) {
@@ -158,8 +164,7 @@ contract SquidBusNFT is
             uint countBuses = balanceOf(_user);
             uint seats;
             for(uint i = 0; i < countBuses; i++){
-                Token memory bus = tokens[tokenOfOwnerByIndex(_user, i)];
-                seats += bus.level;
+                seats += tokens[tokenOfOwnerByIndex(_user, i)].level;
             }
             return(seats);
         } else {

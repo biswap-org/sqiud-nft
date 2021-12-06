@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -23,6 +23,8 @@ interface ISquidBusNFT {
 
     function allowedBusBalance(address user) external view returns (uint);
 
+    function secToNextBus(address _user) external view returns(uint);
+
     function allowedUserToMintBus(address user) external view returns (bool);
 
     function firstBusTimestamp(address user) external;
@@ -42,8 +44,9 @@ interface ISquidPlayerNFT {
         uint rarity;
         address tokenOwner;
         uint squidEnergy;
-        uint contractEndOnBlock;
-        uint busyToBlock;
+        uint maxSquidEnergy;
+        uint contractEndTimestamp;
+        uint busyTo; //Timestamp until which the player is busy
         uint createTimestamp;
         string uri;
     }
@@ -72,6 +75,8 @@ interface ISquidPlayerNFT {
     function ownerOf(uint256 tokenId) external view returns (address owner);
 
     function availableSEAmount(address _user) external view returns(uint amount);
+
+    function arrayUserPlayers(address _user) external view returns(TokensViewFront[] memory);
 }
 
 interface IOracle {
@@ -112,11 +117,15 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         uint chance;
     }
 
+    struct BusToken {
+        uint tokenId;
+        uint level;
+        uint createTimestamp;
+        string uri;
+    }
+
     ChanceTableBus[] public busChance; //value: Bus level
     ChanceTablePlayer[] public playerChance; //Player chance table
-
-    event BusMinted(address user, uint busLevel);
-    event PlayerMinted(address user, uint rarity, uint squidEnergy);
 
     //Initialize function --------------------------------------------------------------------------------------------
 
@@ -142,11 +151,11 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         oracle = _oracle;
         treasuryAddressBus = _treasuryAddressBus;
         treasuryAddressPlayer = _treasuryAddressPlayer;
-        busChancesBase = 100;
         busPriceInUSD = _busPriceInUSD;
         playerPriceInUSD = _playerPriceInUSD;
 
         playerChancesBase = 1000;
+        busChancesBase = 100;
 
         busChance.push(ChanceTableBus({level: 1, chance: 45}));
         busChance.push(ChanceTableBus({level: 2, chance: 37}));
@@ -198,7 +207,7 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         uint _busChancesBase = 0;
         delete busChance;
         for (uint i = 0; i < _newBusChanceTable.length; i++) {
-            _busChancesBase = _newBusChanceTable[i].chance;
+            _busChancesBase += _newBusChanceTable[i].chance;
             busChance.push(_newBusChanceTable[i]);
         }
         busChancesBase = _busChancesBase;
@@ -211,7 +220,7 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         uint _playerChancesBase = 0;
         delete playerChance;
         for (uint i = 0; i < _newPlayerChanceTable.length; i++) {
-            _playerChancesBase = _newPlayerChanceTable[i].chance;
+            _playerChancesBase += _newPlayerChanceTable[i].chance;
             playerChance.push(_newPlayerChanceTable[i]);
         }
         playerChancesBase = _playerChancesBase;
@@ -227,7 +236,6 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         uint busLevel = _randomBusLevel();
 
         busNFT.mint(msg.sender, busLevel);
-        emit BusMinted(msg.sender, busLevel);
     }
 
     function buyPlayer() public notContract nonReentrant whenNotPaused {
@@ -236,8 +244,37 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         bswToken.safeTransferFrom(msg.sender, treasuryAddressPlayer, priceInBSW);
 
         (uint rarity, uint squidEnergy) = _getRandomPlayer();
-        playerNFT.mint(msg.sender, rarity, 0, squidEnergy);
-        emit PlayerMinted(msg.sender, rarity, squidEnergy);
+        playerNFT.mint(msg.sender, squidEnergy * 1e18, 0, rarity - 1);
+    }
+
+    function getBusTokens(address _user) public view returns(BusToken[] memory){
+        require(_user != address(0), "Address cant be zero");
+        uint amount = busNFT.balanceOf(_user);
+        BusToken[] memory busTokens = new BusToken[](amount);
+        if(amount > 0 ){
+            for(uint i = 0; i < amount; i++){
+                (uint tokenId,
+                ,
+                uint level,
+                uint createTimestamp,
+                string memory uri) = busNFT.getToken(busNFT.tokenOfOwnerByIndex(_user, i));
+                busTokens[i].tokenId = tokenId;
+                busTokens[i].level = level;
+                busTokens[i].createTimestamp = createTimestamp;
+                busTokens[i].uri = uri;
+            }
+        }
+        return(busTokens);
+    }
+
+    function getPlayerTokens(address _user) public view returns(ISquidPlayerNFT.TokensViewFront[] memory){
+        require(_user != address(0), "Address cant be zero");
+        return(playerNFT.arrayUserPlayers(_user));
+    }
+
+    function getPricesInBSW() public view returns(uint busPrice, uint playerPrice){
+        busPrice = _getPriceInBSW(busPriceInUSD);
+        playerPrice = _getPriceInBSW(playerPriceInUSD);
     }
 
     //Internal functions --------------------------------------------------------------------------------------------

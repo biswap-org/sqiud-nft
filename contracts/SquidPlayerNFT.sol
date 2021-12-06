@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -18,14 +18,14 @@ contract SquidPlayerNFT is
 
     string private _internalBaseURI;
     uint private _lastTokenId;
-    uint[5] private _rarityLimitsSE;
+    uint[5] private _rarityLimitsSE; //SE limit to each rarity
 
     struct Token {
         uint rarity; //Token rarity (Star)
         uint squidEnergy; // in 1e18
         uint createTimestamp;
-        uint busyTo; //block number to which the token is busy
-        uint contractEndTimestamp; //block number to which the token has game contract
+        uint busyTo; //Timestamp to which the token is busy
+        uint contractEndTimestamp; //Timestamp to which the token has game contract
     }
 
     struct TokensViewFront {
@@ -33,6 +33,7 @@ contract SquidPlayerNFT is
         uint rarity;
         address tokenOwner;
         uint squidEnergy;
+        uint maxSquidEnergy;
         uint contractEndTimestamp;
         uint busyTo; //Timestamp until which the player is busy
         uint createTimestamp;
@@ -42,7 +43,10 @@ contract SquidPlayerNFT is
     mapping(uint256 => Token) private _tokens; // TokenId => Token
 
     event Initialize(string baseURI);
-    event TokenMint(address indexed to, uint indexed tokenId, uint squidEnergy);
+    event TokenMint(uint tokenId, address indexed to, uint indexed _tokenId, uint rarity, uint squidEnergy);
+    event TokensLock(uint[] _tokenId, uint busyTo, uint[] decreaseSE);
+    event SEIncrease(uint[] _tokenId, uint[] addition);
+    event NewContract(uint[] _tokenId, uint contractEndTimestamp);
 
     //Initialize function --------------------------------------------------------------------------------------------
 
@@ -96,6 +100,7 @@ contract SquidPlayerNFT is
         require(squidEnergy <= _rarityLimitsSE[rarity], "Squid energy over rarity limit");
         _lastTokenId += 1;
         uint tokenId = _lastTokenId;
+        _tokens[tokenId].rarity = rarity;
         _tokens[tokenId].squidEnergy = squidEnergy;
         _tokens[tokenId].createTimestamp = block.timestamp;
         _tokens[tokenId].contractEndTimestamp = contractEndTimestamp;
@@ -116,6 +121,7 @@ contract SquidPlayerNFT is
         tokenReturn.rarity = token.rarity;
         tokenReturn.tokenOwner = ownerOf(_tokenId);
         tokenReturn.squidEnergy = token.squidEnergy;
+        tokenReturn.maxSquidEnergy = _rarityLimitsSE[token.rarity];
         tokenReturn.contractEndTimestamp = token.contractEndTimestamp;
         tokenReturn.busyTo = token.busyTo;
         tokenReturn.createTimestamp = token.createTimestamp;
@@ -126,27 +132,30 @@ contract SquidPlayerNFT is
     //returns locked SE amount
     function lockTokens(uint[] calldata tokenId, uint busyTo, uint seDivide) public onlyRole(GAME_ROLE) returns(uint){
         uint seAmount;
+        uint[] memory decreaseSE = new uint[](tokenId.length);
         for (uint i = 0; i < tokenId.length; i++) {
             seAmount += _lockToken(tokenId[i], busyTo);
             if(seDivide > 0){
-                _tokens[tokenId[i]].squidEnergy -= _tokens[tokenId[i]].squidEnergy * seDivide / 10000;
+                decreaseSE[i] = _tokens[tokenId[i]].squidEnergy * seDivide / 10000;
+                _tokens[tokenId[i]].squidEnergy -= decreaseSE[i];
             }
         }
+        emit TokensLock(tokenId, busyTo, decreaseSE);
         return seAmount;
     }
 
-    function setPlayerContract(uint[] calldata tokenId, uint[] calldata contractEndTimestamp) public onlyRole(GAME_ROLE) {
-        require(tokenId.length == contractEndTimestamp.length, "Wrong calldata array size");
+    function setPlayerContract(uint[] calldata tokenId, uint contractEndTimestamp) public onlyRole(GAME_ROLE) {
         for (uint i = 0; i < tokenId.length; i++) {
-            _setPlayerContract(tokenId[i], contractEndTimestamp[i]);
+            _setPlayerContract(tokenId[i], contractEndTimestamp);
         }
+        emit NewContract(tokenId, contractEndTimestamp);
     }
 
     function squidEnergyDecrease(uint[] calldata tokenId, uint[] calldata deduction) public onlyRole(SE_BOOST_ROLE) {
         require(tokenId.length == deduction.length, "Wrong calldata array size");
         for (uint i = 0; i < tokenId.length; i++) {
             require(_exists(tokenId[i]), "ERC721: token does not exist");
-            require(_tokens[tokenId[i]].squidEnergy >= deduction[i], "Wrong deduction value"); //TODO change deduction to divider
+            require(_tokens[tokenId[i]].squidEnergy >= deduction[i], "Wrong deduction value");
             _tokens[tokenId[i]].squidEnergy -= deduction[i];
         }
     }
@@ -159,9 +168,11 @@ contract SquidPlayerNFT is
             require((curToken.squidEnergy + addition[i]) <= _rarityLimitsSE[curToken.rarity], "Wrong addition value");
             curToken.squidEnergy += addition[i];
         }
+        emit SEIncrease(tokenId, addition);
     }
 
     function arrayUserPlayers(address _user) public view returns(TokensViewFront[] memory){
+        if(balanceOf(_user) == 0) return new TokensViewFront[](0);
         return arrayUserPlayers(_user, 0, balanceOf(_user)-1);
     }
 
@@ -172,7 +183,7 @@ contract SquidPlayerNFT is
     ) public view returns(TokensViewFront[] memory){
         require(_to < balanceOf(_user), "Wrong max array value");
         require((_to - _from) <= balanceOf(_user), "Wrong array range");
-        TokensViewFront[] memory tokens = new TokensViewFront[](_to - _from);
+        TokensViewFront[] memory tokens = new TokensViewFront[](_to - _from + 1);
         uint index = 0;
         for (uint i = _from; i <= _to; i++) {
             uint id = tokenOfOwnerByIndex(_user, i);
@@ -183,6 +194,7 @@ contract SquidPlayerNFT is
     }
 
     function arrayUserPlayersWithValidContracts(address _user) public view returns(TokensViewFront[] memory){
+        if(balanceOf(_user) == 0) return new TokensViewFront[](0);
         return arrayUserPlayersWithValidContracts(_user, 0, balanceOf(_user)-1);
     }
 
@@ -192,18 +204,21 @@ contract SquidPlayerNFT is
         uint _to
     ) public view returns(TokensViewFront[] memory){
         require(_to < balanceOf(_user), "Wrong max array value");
-        require((_to - _from) >= balanceOf(_user), "Wrong array range");
-        TokensViewFront[] memory tokens = new TokensViewFront[](_to - _from);
-        uint index = 0;
+        require((_to - _from) <= balanceOf(_user), "Wrong array range");
+        uint[] memory index = new uint[](_to - _from + 1);
+        uint count = 0;
         for (uint i = _from; i <= _to; i++) {
             uint id = tokenOfOwnerByIndex(_user, i);
-            TokensViewFront memory _currentToken = getToken(id);
-            if(_currentToken.contractEndTimestamp > block.timestamp){
-                tokens[index] = _currentToken;
-                index++;
+            if(getToken(id).contractEndTimestamp > block.timestamp){
+                index[count] = id;
+                count++;
             }
         }
-        return(tokens);
+        TokensViewFront[] memory tokensView = new TokensViewFront[](count);
+        for (uint i = 0; i < count; i++) {
+            tokensView[i] = getToken(index[i]);
+        }
+        return(tokensView);
     }
 
     function availableSEAmount(address _user) public view returns(uint amount) {
@@ -238,7 +253,7 @@ contract SquidPlayerNFT is
 
     function _safeMint(address to, uint256 tokenId) internal override {
         super._safeMint(to, tokenId);
-        emit TokenMint(to, tokenId, _tokens[tokenId].squidEnergy);
+        emit TokenMint(tokenId, to, tokenId, _tokens[tokenId].rarity, _tokens[tokenId].squidEnergy);
     }
 
     //Private functions --------------------------------------------------------------------------------------------
