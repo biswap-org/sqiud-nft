@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721Enumer
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
+
 contract SquidBusNFT is
     Initializable,
     ERC721EnumerableUpgradeable,
@@ -20,29 +21,29 @@ contract SquidBusNFT is
 
     string private internalBaseURI;
     uint private lastTokenId;
-    uint private maxBusLevel; // maximum bus capacity
+    uint8 private maxBusLevel; // maximum bus capacity
 
     struct Token {
-        uint level; //how many players can fit on the bus
-        uint createTimestamp;
+        uint8 level; //how many players can fit on the bus
+        uint32 createTimestamp;
     }
 
-    mapping(uint256 => Token) private tokens; // TokenId => Token
+    mapping(uint => Token) private tokens; // TokenId => Token
     mapping(address => uint) public firstBusTimestamp; //timestamp when user mint first bus
 
     event Initialize(string baseURI);
-    event TokenMint(address indexed to, uint indexed tokenId, uint level);
+    event TokenMint(address indexed to, uint indexed tokenId, uint8 level);
 
     //Initialize function --------------------------------------------------------------------------------------------
 
     function initialize(
         string memory baseURI,
-        uint _maxBusLevel,
+        uint8 _maxBusLevel,
         uint _minBusBalance,
         uint _maxBusBalance,
         uint _busAdditionPeriod
     ) public initializer {
-        __ERC721_init("SquidBusNFT", "SBUS");
+        __ERC721_init("Biswap Squid Buses", "BSB");//BSB - Biswap Squid Buses
         __ERC721Enumerable_init();
         __AccessControl_init_unchained();
         __ReentrancyGuard_init();
@@ -60,7 +61,7 @@ contract SquidBusNFT is
     //External functions --------------------------------------------------------------------------------------------
 
     function setBusParameters(
-        uint _maxBusLevel,
+        uint8 _maxBusLevel,
         uint _minBusBalance,
         uint _maxBusBalance,
         uint _busAdditionPeriod
@@ -90,7 +91,7 @@ contract SquidBusNFT is
         return interfaceId == type(IERC721EnumerableUpgradeable).interfaceId || super.supportsInterface(interfaceId);
     }
 
-    function mint(address _to, uint _busLevel) public onlyRole(TOKEN_MINTER_ROLE) nonReentrant {
+    function mint(address _to, uint8 _busLevel) public onlyRole(TOKEN_MINTER_ROLE) nonReentrant {
         require(_to != address(0), "Address can not be zero");
         require(_busLevel <= maxBusLevel, "Volume out of range");
         if (firstBusTimestamp[_to] == 0) {
@@ -99,7 +100,7 @@ contract SquidBusNFT is
         lastTokenId += 1;
         uint tokenId = lastTokenId;
         tokens[tokenId].level = _busLevel;
-        tokens[tokenId].createTimestamp = block.timestamp;
+        tokens[tokenId].createTimestamp = uint32(block.timestamp);
         _safeMint(_to, tokenId);
     }
 
@@ -115,8 +116,8 @@ contract SquidBusNFT is
         returns (
             uint tokenId,
             address tokenOwner,
-            uint level,
-            uint createTimestamp,
+            uint8 level,
+            uint32 createTimestamp,
             string memory uri
         )
     {
@@ -142,7 +143,7 @@ contract SquidBusNFT is
     function secToNextBus(address _user) public view returns(uint) {
         if (firstBusTimestamp[_user] == 0 || allowedBusBalance(_user) >= maxBusBalance) return 0;
         uint passedTime = (block.timestamp - firstBusTimestamp[_user]);
-        uint timeLeft = (passedTime / busAdditionPeriod + 1) * busAdditionPeriod - passedTime;
+        uint timeLeft = (passedTime / busAdditionPeriod + 1) * busAdditionPeriod + firstBusTimestamp[_user];
 
         return timeLeft;
     }
@@ -178,12 +179,12 @@ contract SquidBusNFT is
         return internalBaseURI;
     }
 
-    function _burn(uint256 _tokenId) internal override {
+    function _burn(uint _tokenId) internal override {
         super._burn(_tokenId);
         delete tokens[_tokenId];
     }
 
-    function _safeMint(address _to, uint256 _tokenId) internal override {
+    function _safeMint(address _to, uint _tokenId) internal override {
         super._safeMint(_to, _tokenId);
         emit TokenMint(_to, _tokenId, tokens[_tokenId].level);
     }

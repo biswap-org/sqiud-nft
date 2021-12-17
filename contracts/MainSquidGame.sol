@@ -6,105 +6,25 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
-interface ISquidBusNFT {
-    function getToken(uint _tokenId)
-        external
-        view
-        returns (
-            uint tokenId,
-            address tokenOwner,
-            uint level,
-            uint createTimestamp,
-            string memory uri
-        );
-
-    function mint(address to, uint busLevel) external;
-
-    function secToNextBus(address _user) external view returns(uint);
-
-    function allowedBusBalance(address user) external view returns (uint);
-
-    function allowedUserToMintBus(address user) external view returns (bool);
-
-    function firstBusTimestamp(address user) external;
-
-    function seatsInBuses(address user) external view returns (uint);
-
-    function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256 tokenId);
-
-    function balanceOf(address owner) external view returns (uint256 balance);
-
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-}
-
-interface ISquidPlayerNFT {
-    struct TokensViewFront {
-        uint tokenId;
-        uint rarity;
-        address tokenOwner;
-        uint squidEnergy;
-        uint contractEndOnBlock;
-        uint busyToBlock;
-        uint createTimestamp;
-        string uri;
-    }
-
-    function getToken(uint _tokenId) external view returns (TokensViewFront memory);
-
-    function mint(
-        address to,
-        uint squidEnergy,
-        uint contractEndOnBlock,
-        uint rarity
-    ) external;
-
-    function lockTokens(
-        uint[] calldata tokenId,
-        uint busyToBlock,
-        uint seDivide
-    ) external returns (uint);
-
-    function setPlayerContract(uint[] calldata tokenId, uint contractEndTimestamp) external;
-
-    function squidEnergyDecrease(uint[] calldata tokenId, uint[] calldata deduction) external;
-
-    function squidEnergyIncrease(uint[] calldata tokenId, uint[] calldata addition) external;
-
-    function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256 tokenId);
-
-    function balanceOf(address owner) external view returns (uint256 balance);
-
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-
-    function availableSEAmount(address _user) external view returns (uint amount);
-
-    function totalSEAmount(address _user) external view returns (uint amount);
-}
-
-interface IOracle {
-    function consult(
-        address tokenIn,
-        uint amountIn,
-        address tokenOut
-    ) external view returns (uint amountOut);
-}
+import "./interface/ISquidBusNFT.sol";
+import "./interface/ISquidPlayerNFT.sol";
+import "./interface/IOracle.sol";
 
 interface IMasterChef {
     struct UserInfo {
-        uint256 amount;
-        uint256 rewardDebt;
+        uint amount;
+        uint rewardDebt;
     }
 
-    function userInfo(uint256 _pid, address _user) external view returns (UserInfo memory);
+    function userInfo(uint _pid, address _user) external view returns (UserInfo memory);
 }
 
 interface IautoBsw {
     struct UserInfo {
-        uint256 shares; // number of shares for a user
-        uint256 lastDepositedTime; // keeps track of deposited time for potential penalty
-        uint256 BswAtLastUserAction; // keeps track of Bsw deposited at the last user action
-        uint256 lastUserActionTime; // keeps track of the last user action time
+        uint shares; // number of shares for a user
+        uint lastDepositedTime; // keeps track of deposited time for potential penalty
+        uint BswAtLastUserAction; // keeps track of Bsw deposited at the last user action
+        uint lastUserActionTime; // keeps track of the last user action time
     }
 
     function userInfo(address user) external view returns (UserInfo memory);
@@ -123,18 +43,19 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     struct RewardToken {
         address token;
-        uint reward;
+        uint128 rewardInUSD;
+        uint128 rewardInToken;
     }
 
     struct PlayerContract{
-        uint duration; //in seconds
-        uint priceInUSD;
+        uint32 duration; //in seconds
+        uint128 priceInUSD;
         bool enable; //true: enabled; false: disabled
     }
 
     struct Game {
-        uint minSeAmount;
-        uint minStakeAmount; //min stake amount (in masterChef and autoBsw) to be available to play game
+        uint128 minSeAmount;
+        uint128 minStakeAmount; //min stake amount (in masterChef and autoBsw) to be available to play game
         uint chanceToWin; //base 10000
         RewardToken[] rewardTokens;
         string name;
@@ -151,6 +72,8 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint totalSEAmount;
         uint stakedAmount;
         uint bswBalance;
+        RewardToken[] rewardBalance;
+        uint currentFee;
     }
 
     struct GameInfo {
@@ -161,12 +84,15 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         bool seAmount;
     }
 
+    uint constant MAX_WITHDRAWAL_FEE = 5000;
+
     uint public decreaseWithdrawalFeeByDay; //150: -1,5% by day
     uint public withdrawalFee; //2700: 27%
     uint public recoveryTime; // 48h = 172800 for lock tokens after game play
-    uint public seDivide; //base 10000
-    uint public gracePeriod; //30d = 2592000; Period in seconds when SE didnt decrease after game
-    bool public enableSeDivide; //enabled decrease SE after each game
+    uint128 public seDivide; //TODO del in prod
+    uint public gracePeriod; //TODO del in prod
+    bool public enableSeDivide; //TODO del in prod
+
     address public treasuryAddress;
 
     Game[] public games;
@@ -174,14 +100,14 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     address[] rewardTokens;
     mapping(address => uint) public withdrawTimeLock; //user address => block.timestamp; To calc withdraw fee
     mapping(address => uint) public firstGameCountdownSE; //user address => block.timestamp Grace period after this - SEDecrease enabled
-    mapping(address => mapping(address => uint)) userBalances; //user balances: user address => token address => amount
+    mapping(address => mapping(address => uint128)) userBalances; //user balances: user address => token address => amount
 
     event GameAdded(uint gameIndex);
     event GameDisable(uint gameIndex);
     event GameEnable(uint gameIndex);
-    event ChangeSEDivideState(bool state, uint seDivide);
-    event GamePlay(address indexed user, uint indexed gameIndex, bool userWin);
+    event GamePlay(address indexed user, uint indexed gameIndex, bool userWin, address[] rewardTokens, uint128[] rewardAmount);
     event Withdrew(address indexed user);
+    event RewardTokenChanged(uint gameIndex);
 
     //Initialize function --------------------------------------------------------------------------------------------
 
@@ -219,10 +145,6 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         autoBsw = _autoBsw;
         treasuryAddress = _treasuryAddress;
         recoveryTime = _recoveryTime;
-
-        playerContracts.push(PlayerContract({duration: 1296000, priceInUSD: 15e18, enable: true})); //15 days, 15$, true
-        playerContracts.push(PlayerContract({duration: 2592000, priceInUSD: 279e17, enable: true})); //30 days, 27,9$, true
-        playerContracts.push(PlayerContract({duration: 5184000, priceInUSD: 51e18, enable: true})); //60 days, 51$, true
 
     }
 
@@ -272,6 +194,15 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         emit GameEnable(_gameIndex);
     }
 
+    function setRewardTokensToGame(uint _gameIndex, RewardToken[] calldata _rewardTokens) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_gameIndex < games.length, "Index out of bound");
+        delete games[_gameIndex].rewardTokens;
+        for(uint i = 0; i < _rewardTokens.length; i++){
+            games[_gameIndex].rewardTokens.push(_rewardTokens[i]);
+        }
+        emit RewardTokenChanged(_gameIndex);
+    }
+
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
@@ -284,6 +215,8 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        //MSG-02
+        require(_withdrawalFee <= MAX_WITHDRAWAL_FEE, "Incorrect value withdrawal Fee");
         withdrawalFee = _withdrawalFee;
         decreaseWithdrawalFeeByDay = _decreaseWithdrawalFeeByDay;
     }
@@ -292,17 +225,6 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         recoveryTime = _newRecoveryTime;
     }
 
-    function setEnableSeDivide(
-        bool _state,
-        uint _seDivide,
-        uint _gracePeriod
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        enableSeDivide = _state;
-        seDivide = _seDivide;
-        gracePeriod = _gracePeriod;
-
-        emit ChangeSEDivideState(_state, _seDivide);
-    }
 
     //Public functions ----------------------------------------------------------------------------------------------
 
@@ -315,21 +237,25 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         if (firstGameCountdownSE[msg.sender] == 0) {
             firstGameCountdownSE[msg.sender] = block.timestamp;
         }
-        bool gracePeriodHasPassed = (block.timestamp - firstGameCountdownSE[msg.sender]) >= gracePeriod;
-        uint _seDivide = enableSeDivide && gracePeriodHasPassed ? seDivide : 0;
-        uint totalSE = playerNFT.lockTokens(_playersId, block.timestamp + recoveryTime, _seDivide);
+        uint128 totalSE = playerNFT.lockTokens(_playersId, uint32(block.timestamp + recoveryTime), true, msg.sender);
         require(totalSE >= _game.minSeAmount, "Not enough SE amount");
         bool userWin = _getRandomForWin(_gameIndex);
+        address[] memory _rewardTokens = new address[](_game.rewardTokens.length);
+        uint128[] memory _rewardAmount = new uint128[](_game.rewardTokens.length);
         if (userWin) {
-            if (withdrawTimeLock[msg.sender] == 0) withdrawTimeLock[msg.sender] = block.timestamp;
             for (uint i = 0; i < _game.rewardTokens.length; i++) {
-                userBalances[msg.sender][_game.rewardTokens[i].token] += _game.rewardTokens[i].reward;
+                    _rewardAmount[i] = _game.rewardTokens[i].rewardInToken == 0 ?
+                    _getPriceInToken(_game.rewardTokens[i].token, _game.rewardTokens[i].rewardInUSD) :
+                    _game.rewardTokens[i].rewardInToken;
+                _rewardTokens[i] = _game.rewardTokens[i].token;
             }
+            _balanceIncrease(msg.sender, _rewardTokens, _rewardAmount);
         }
-        emit GamePlay(msg.sender, _gameIndex, userWin);
+        emit GamePlay(msg.sender, _gameIndex, userWin, _rewardTokens, _rewardAmount);
     }
 
     function withdrawReward() public notContract whenNotPaused nonReentrant {
+        require(withdrawTimeLock[msg.sender] > 0, "Withdraw not allowed");
         uint calcFee;
         uint multipl = (block.timestamp - withdrawTimeLock[msg.sender]) / 86400;
         calcFee = (multipl * decreaseWithdrawalFeeByDay) >= withdrawalFee
@@ -338,13 +264,16 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
 
         for (uint i = 0; i < rewardTokens.length; i++) {
             address currentToken = rewardTokens[i];
-            uint currentBalance = userBalances[msg.sender][currentToken];
+            uint128 currentBalance = userBalances[msg.sender][currentToken];
+            delete userBalances[msg.sender][currentToken];
             if (currentBalance > 0) {
                 uint fee = (currentBalance * calcFee) / 10000;
                 IERC20Upgradeable(currentToken).safeTransfer(treasuryAddress, fee);
                 IERC20Upgradeable(currentToken).safeTransfer(msg.sender, currentBalance - fee);
             }
         }
+        //MSG-03
+        delete withdrawTimeLock[msg.sender];
         emit Withdrew(msg.sender);
     }
     
@@ -353,7 +282,7 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint priceInBSW = _getPriceInBSW(playerContracts[_contractIndex].priceInUSD);
         uint totalCost = priceInBSW * _tokensId.length;
         IERC20Upgradeable(bswToken).safeTransferFrom(msg.sender, treasuryAddress, totalCost);
-        playerNFT.setPlayerContract(_tokensId, block.timestamp + playerContracts[_contractIndex].duration);
+        playerNFT.setPlayerContract(_tokensId, uint32(block.timestamp + playerContracts[_contractIndex].duration), msg.sender);
     }
 
     function checkGameRequirements(address _user) public view returns(bool busAndPlayersAmount){
@@ -369,14 +298,26 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         _userInfo.allowedSeatsInBuses = busNFT.seatsInBuses(_user);
         _userInfo.availableSEAmount = playerNFT.availableSEAmount(_user);
         _userInfo.totalSEAmount = playerNFT.totalSEAmount(_user);
-        _userInfo.stakedAmount = masterChef.userInfo(0, _user).amount + autoBsw.userInfo(_user).shares;
+        _userInfo.stakedAmount = masterChef.userInfo(0, _user).amount + autoBsw.userInfo(_user).BswAtLastUserAction;
         _userInfo.bswBalance = IERC20Upgradeable(bswToken).balanceOf(_user);
         _userInfo.secToNextBus = busNFT.secToNextBus(_user);
-        return (_userInfo);
+        RewardToken[] memory _rewardBalance = new RewardToken[](rewardTokens.length);
+        for(uint i = 0; i < rewardTokens.length; i++){
+            _rewardBalance[i].token = rewardTokens[i];
+            _rewardBalance[i].rewardInToken = userBalances[_user][rewardTokens[i]];
+        }
+        _userInfo.rewardBalance = _rewardBalance;
+        uint calcFee;
+        uint multipl = (block.timestamp - withdrawTimeLock[_user]) / 1 days;
+        calcFee = (multipl * decreaseWithdrawalFeeByDay) >= withdrawalFee
+            ? 0
+            : withdrawalFee - (multipl * decreaseWithdrawalFeeByDay);
+        _userInfo.currentFee = calcFee;
+    return (_userInfo);
     }
 
-    function getUserRewardBalances(address _user) public view returns (address[] memory, uint[] memory) {
-        uint[] memory balances = new uint[](rewardTokens.length);
+    function getUserRewardBalances(address _user) public view returns (address[] memory, uint128[] memory) {
+        uint128[] memory balances = new uint128[](rewardTokens.length);
         for (uint i = 0; i < balances.length; i++) {
             balances[i] = userBalances[_user][rewardTokens[i]];
         }
@@ -398,16 +339,23 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
             gamesInfo[i].playerAndBusAmount = playerAndBusAmount;
             gamesInfo[i].bswStake = bswStake;
             gamesInfo[i].seAmount = seAmount;
+
+            for(uint j = 0; j < gamesInfo[i].game.rewardTokens.length; j++){
+                gamesInfo[i].game.rewardTokens[j].rewardInToken = gamesInfo[i].game.rewardTokens[j].rewardInToken == 0 ?
+                    _getPriceInToken(gamesInfo[i].game.rewardTokens[j].token, gamesInfo[i].game.rewardTokens[j].rewardInUSD) :
+                    gamesInfo[i].game.rewardTokens[j].rewardInToken;
+            }
         }
         return(gamesInfo);
     }
+
 
     //Internal functions --------------------------------------------------------------------------------------------
 
     function _checkMinStakeAmount(address _user, uint _gameIndex) internal view returns (bool) {
         require(_gameIndex < games.length, "Game index out of bound");
         uint stakeAmount = masterChef.userInfo(0, _user).amount;
-        stakeAmount += autoBsw.userInfo(_user).shares;
+        stakeAmount += autoBsw.userInfo(_user).BswAtLastUserAction;
         return stakeAmount >= games[_gameIndex].minStakeAmount;
     }
 
@@ -427,6 +375,10 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         return oracle.consult(address(usdtToken), _amount, address(bswToken));
     }
 
+    function _getPriceInToken(address _token, uint _amount) internal view returns (uint128) {
+        return uint128(oracle.consult(address(usdtToken), _amount, _token));
+    }
+
     function _tokenInArray(address _token) internal view returns (bool) {
         for (uint i = 0; i < rewardTokens.length; i++) {
             if (_token == rewardTokens[i]) return true;
@@ -440,4 +392,21 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint random = (uint(keccak256(abi.encodePacked(blockhash(block.number - 1), gasleft()))) % 10000) + 1;
         return random < games[_gameIndex].chanceToWin;
     }
+
+    function _balanceIncrease(address _user, address[] memory _token, uint128[] memory _amount) private {
+        require(_token.length == _amount.length, "Wrong arrays length");
+        if(withdrawTimeLock[_user] == 0) withdrawTimeLock[_user] = block.timestamp;
+        for(uint i = 0; i < _token.length; i++){
+            userBalances[_user][_token[i]] +=  _amount[i];
+        }
+    }
+
+    function _balanceDecrease(address _user, address[] memory _token, uint128[] memory _amount) private {
+        require(_token.length == _amount.length);
+        for(uint i = 0; i < _token.length; i++){
+            require(userBalances[_user][_token[i]] >=  _amount[i], "Insufficient balance");
+            userBalances[_user][_token[i]] -=  _amount[i];
+        }
+    }
 }
+

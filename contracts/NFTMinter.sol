@@ -6,86 +6,10 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "./interface/ISquidBusNFT.sol";
+import "./interface/ISquidPlayerNFT.sol";
+import "./interface/IOracle.sol";
 
-interface ISquidBusNFT {
-    function getToken(uint _tokenId)
-        external
-        view
-        returns (
-            uint tokenId,
-            address tokenOwner,
-            uint level,
-            uint createTimestamp,
-            string memory uri
-        );
-
-    function mint(address to, uint busLevel) external;
-
-    function allowedBusBalance(address user) external view returns (uint);
-
-    function secToNextBus(address _user) external view returns(uint);
-
-    function allowedUserToMintBus(address user) external view returns (bool);
-
-    function firstBusTimestamp(address user) external;
-
-    function seatsInBuses(address user) external view returns (uint);
-
-    function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256 tokenId);
-
-    function balanceOf(address owner) external view returns (uint256 balance);
-
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-}
-
-interface ISquidPlayerNFT {
-    struct TokensViewFront {
-        uint tokenId;
-        uint rarity;
-        address tokenOwner;
-        uint squidEnergy;
-        uint maxSquidEnergy;
-        uint contractEndTimestamp;
-        uint busyTo; //Timestamp until which the player is busy
-        uint createTimestamp;
-        string uri;
-    }
-
-    function getToken(uint _tokenId) external view returns (TokensViewFront memory);
-
-    function mint(
-        address to,
-        uint squidEnergy,
-        uint contractEndOnBlock,
-        uint rarity
-    ) external;
-
-    function lockTokens(uint[] calldata tokenId, uint busyToBlock, uint seDivide) external returns (uint);
-
-    function setGameContract(uint[] calldata tokenId, uint[] calldata contractEndOnBlock) external;
-
-    function squidEnergyDecrease(uint[] calldata tokenId, uint[] calldata deduction) external;
-
-    function squidEnergyIncrease(uint[] calldata tokenId, uint[] calldata addition) external;
-
-    function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256 tokenId);
-
-    function balanceOf(address owner) external view returns (uint256 balance);
-
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-
-    function availableSEAmount(address _user) external view returns(uint amount);
-
-    function arrayUserPlayers(address _user) external view returns(TokensViewFront[] memory);
-}
-
-interface IOracle {
-    function consult(
-        address tokenIn,
-        uint amountIn,
-        address tokenOut
-    ) external view returns (uint amountOut);
-}
 
 contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -106,26 +30,29 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
     IOracle public oracle;
 
     struct ChanceTableBus {
-        uint32 level; //Desired value
+        uint8 level; //Desired value
         uint64 chance; // Probability
     }
 
     struct ChanceTablePlayer {
-        uint rarity;
-        uint maxValue;
-        uint minValue;
-        uint chance;
+        uint8 rarity;
+        uint128 maxValue;
+        uint128 minValue;
+        uint32 chance;
     }
 
     struct BusToken {
         uint tokenId;
-        uint level;
-        uint createTimestamp;
+        uint8 level;
+        uint32 createTimestamp;
         string uri;
     }
 
     ChanceTableBus[] public busChance; //value: Bus level
     ChanceTablePlayer[] public playerChance; //Player chance table
+
+    event TokenMint(address indexed to, uint indexed tokenId, uint8 rarity, uint128 squidEnergy); //PlayerNFT contract event
+    event TokenMint(address indexed to, uint indexed tokenId, uint8 level); //Bus NFT event
 
     //Initialize function --------------------------------------------------------------------------------------------
 
@@ -233,7 +160,7 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         uint priceInBSW = _getPriceInBSW(busPriceInUSD);
         bswToken.safeTransferFrom(msg.sender, treasuryAddressBus, priceInBSW);
 
-        uint busLevel = _randomBusLevel();
+        uint8 busLevel = _randomBusLevel();
 
         busNFT.mint(msg.sender, busLevel);
     }
@@ -243,7 +170,7 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         uint priceInBSW = _getPriceInBSW(playerPriceInUSD);
         bswToken.safeTransferFrom(msg.sender, treasuryAddressPlayer, priceInBSW);
 
-        (uint rarity, uint squidEnergy) = _getRandomPlayer();
+        (uint8 rarity, uint128 squidEnergy) = _getRandomPlayer();
         playerNFT.mint(msg.sender, squidEnergy * 1e18, 0, rarity - 1);
     }
 
@@ -255,8 +182,8 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
             for(uint i = 0; i < amount; i++){
                 (uint tokenId,
                 ,
-                uint level,
-                uint createTimestamp,
+                uint8 level,
+                uint32 createTimestamp,
                 string memory uri) = busNFT.getToken(busNFT.tokenOfOwnerByIndex(_user, i));
                 busTokens[i].tokenId = tokenId;
                 busTokens[i].level = level;
@@ -293,15 +220,15 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
 
     //Private functions --------------------------------------------------------------------------------------------
 
-    function _getRandomPlayer() private view returns (uint, uint) {
+    function _getRandomPlayer() private view returns (uint8, uint128) {
         ChanceTablePlayer[] memory _playerChance = playerChance;
         uint _randomForRarity = _getRandomMinMax(1, playerChancesBase);
         uint count = 0;
         for (uint i = 0; i < _playerChance.length; i++) {
             count += _playerChance[i].chance;
             if (_randomForRarity <= count) {
-                uint rarity = _playerChance[i].rarity;
-                uint squidEnergy = _getRandomMinMax(_playerChance[i].minValue, _playerChance[i].maxValue);
+                uint8 rarity = _playerChance[i].rarity;
+                uint128 squidEnergy = uint128(_getRandomMinMax(_playerChance[i].minValue, _playerChance[i].maxValue));
                 return (rarity, squidEnergy);
             }
         }
@@ -313,11 +240,11 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         random = (uint(keccak256(abi.encodePacked(blockhash(block.number - 1), gasleft()))) % diff) + _min;
     }
 
-    function _randomBusLevel() private view returns (uint) {
+    function _randomBusLevel() private view returns (uint8) {
         ChanceTableBus[] memory _busChance = busChance;
 
         uint _randomForLevel = _getRandomMinMax(1, busChancesBase);
-        uint count = 0;
+        uint64 count = 0;
         for (uint i = 0; i < _busChance.length; i++) {
             count += _busChance[i].chance;
             if (_randomForLevel <= count) {
