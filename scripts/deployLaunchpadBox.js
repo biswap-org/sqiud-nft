@@ -10,7 +10,7 @@ const TOKEN_MINTER_ROLE = `0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d9
 const squidPlayerNFTAddress = deployedContracts.proxy_squidPlayerNFT
 const squidBusNFTAddress = deployedContracts.proxy_squidBusNFT
 const dealTokenAddress = `0x965f527d9159dce6288a2219db51fc6eef120dd1`
-const treasuryAddress =  `0x7BD21Ba85045A4D84e9d45597CbE1F656A0E7989` //TODO change in prod
+const treasuryAddress =  `` //TODO change in prod
 
 let launchpad, squidBusNFT, squidPlayerNFT
 
