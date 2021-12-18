@@ -93,6 +93,7 @@ contract LaunchpadNftMysteryBoxes is Ownable, Pausable {
         //BOX 5 ----------------------------------------------------------------------------
         boxes[4].busNFTEntity.push(BusNFTEntity({busLevel: 3}));
         boxes[4].playerNFTEntity.push(PlayerNFTEntity({squidEnergy: 800 ether, rarity: 2}));
+        boxes[4].playerNFTEntity.push(PlayerNFTEntity({squidEnergy: 800 ether, rarity: 2}));
 
         //BOX 6 ----------------------------------------------------------------------------
         boxes[5].busNFTEntity.push(BusNFTEntity({busLevel: 2}));
@@ -125,8 +126,7 @@ contract LaunchpadNftMysteryBoxes is Ownable, Pausable {
         boxes[9].playerNFTEntity.push(PlayerNFTEntity({squidEnergy: 3000 ether, rarity: 5}));
 
 
-
-    probability = [2500, 2500, 2000, 1600, 600, 500, 125, 125, 40, 10];
+        probability = [2500, 2500, 2000, 1600, 600, 500, 125, 125, 40, 10];
 
         require(probability.length == boxes.length, "Wrong arrays length");
         uint _base;

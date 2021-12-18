@@ -5,5 +5,9 @@
 /.idea/.gitignore
 /.idea/GameFi.iml
 /.idea/modules.xml
-/.openzeppelin/unknown-31337.json
 /.idea/vcs.xml
+/.openzeppelin/
+/contracts/flatten/
+/temp/
+/deploymentCache.json
+/deployNFTAddresses.json

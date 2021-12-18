@@ -6,17 +6,17 @@ const fs = require('fs')
 
 
 //squidBusNFT initialize parameters
-const baseURIBusNFT = `` //TODO change in prod
-const maxBusLevel = 5 //TODO change in prod
-const minBusBalance = 2 //TODO change in prod
-const maxBusBalance = 5 //TODO change in prod
-const busAdditionPeriod = 30 * 60 //7 * 3600*24 //7 days //TODO change in prod
+const baseURIBusNFT = `https://squid-nft.io/back/metadata/bus/`
+const maxBusLevel = 5
+const minBusBalance = 2
+const maxBusBalance = 5
+const busAdditionPeriod = 7 * 3600*24 //7 days
 
 //squidPlayerNFT initialize parameters (string baseURIPlayerNFT, uint128 _seDivide, uint _gracePeriod, bool _enableSeDivide)
-const baseURIPlayerNFT = `` //TODO change in prod
-const seDivide = 100 // 1% by game //TODO change in prod
-const gracePeriod =  45*60 //45*3600*24 //45 days //TODO change in prod
-const enableSeDivide = true //Enabled //TODO change in prod
+const baseURIPlayerNFT = `https://squid-nft.io/back/metadata/player/`
+const seDivide = 100 // 1% by game
+const gracePeriod =  45*3600*24 //45 days
+const enableSeDivide = true //Enabled
 
 
 let squidBusNFT, squidPlayerNFT
