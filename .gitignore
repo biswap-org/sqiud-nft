@@ -6,7 +6,6 @@
 /.idea/GameFi.iml
 /.idea/modules.xml
 /.idea/vcs.xml
-/.openzeppelin/
 /contracts/flatten/
 /temp/
 /deploymentCache.json
