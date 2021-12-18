@@ -3,6 +3,8 @@
 //Users/admin/Documents/BSW/GameFi/node_modules/@openzeppelin/upgrades-core/dist/deployment.js 46
 const { ethers, network, upgrades } = require(`hardhat`);
 
+const fs = require('fs')
+
 
 const toWei = n => ethers.BigNumber.from(10).pow(18).mul(n);
 const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
@@ -27,8 +29,8 @@ const treasuryAddress = `0xd3a70caa19d72D9Ed09520594cae4eeA7812Ab51` //TODO chan
 const recoveryTime = 5 * 60 //48 * 3600 //48 hours //TODO change in prod
 
 //NFTMinter initialize parameters
-const treasuryAddressBus = `` //TODO change in prod
-const treasuryAddressPlayer = `` //TODO change in prod
+const treasuryAddressBus = `0xd3a70caa19d72D9Ed09520594cae4eeA7812Ab51`
+const treasuryAddressPlayer = `0xd3a70caa19d72D9Ed09520594cae4eeA7812Ab51`
 const busPriceInUSD = toBN(30,15)//toWei(30) //TODO change in prod
 const playerPriceInUSD = toBN(30, 15) // toWei(30) //TODO change in prod
 
@@ -108,15 +110,34 @@ async function main() {
     await nftMinter.deployed();
 
 
-    console.log(`squidBusNFT deployed to    ${squidBusNFT.address}`);
-    console.log(`squidPlayerNFT deployed to ${squidPlayerNFT.address}`);
-    console.log(`game deployed to           ${game.address}`);
-    console.log(`nftMinter deployed to      ${nftMinter.address}`);
 
-    console.log(`squidBusNFT implementation address:    `, await getImplementationAddress(squidBusNFT.address));
-    console.log(`squidPlayerNFT implementation address: `, await getImplementationAddress(squidPlayerNFT.address));
-    console.log(`game implementation address:           `, await getImplementationAddress(game.address));
-    console.log(`nftMinter implementation address:      `, await getImplementationAddress(nftMinter.address));
+    const deployedContracts = {
+        deployTime:     new Date().toLocaleString(),
+
+        proxy_squidBusNFT:    squidBusNFT.address,
+        proxy_squidPlayerNFT: squidPlayerNFT.address,
+        proxy_mainSquidGame:  game.address,
+        proxy_nftMinter:      nftMinter.address,
+
+        imp_squidBusNFT:    await getImplementationAddress(squidBusNFT.address),
+        imp_squidPlayerNFT: await getImplementationAddress(squidPlayerNFT.address),
+        imp_mainSquidGame:  await getImplementationAddress(game.address),
+        imp_nftMinter:      await getImplementationAddress(nftMinter.address)
+    }
+    fs.writeFileSync('deploymentCache.json', JSON.stringify(deployedContracts, null, 4), () => {
+        console.log(deployedContracts)
+    })
+
+
+    // console.log(`squidBusNFT deployed to    ${squidBusNFT.address}`);
+    // console.log(`squidPlayerNFT deployed to ${squidPlayerNFT.address}`);
+    // console.log(`game deployed to           ${game.address}`);
+    // console.log(`nftMinter deployed to      ${nftMinter.address}`);
+
+    // console.log(`squidBusNFT implementation address:    `, await getImplementationAddress(squidBusNFT.address));
+    // console.log(`squidPlayerNFT implementation address: `, await getImplementationAddress(squidPlayerNFT.address));
+    // console.log(`game implementation address:           `, await getImplementationAddress(game.address));
+    // console.log(`nftMinter implementation address:      `, await getImplementationAddress(nftMinter.address));
 
 }
 

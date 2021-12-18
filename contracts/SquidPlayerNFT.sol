@@ -59,7 +59,7 @@ contract SquidPlayerNFT is
 
     //Initialize function --------------------------------------------------------------------------------------------
 
-    function initialize(string memory baseURI) public initializer {
+    function initialize(string memory baseURI, uint128 _seDivide, uint _gracePeriod, bool _enableSeDivide) public initializer {
         __ERC721_init("Biswap Squid Players", "BSP"); //BSP - Biswap Squid Players
         __ERC721Enumerable_init();
         __AccessControl_init_unchained();
@@ -73,6 +73,9 @@ contract SquidPlayerNFT is
         _rarityLimitsSE[4] = 3300 ether;
 
         _internalBaseURI = baseURI;
+        seDivide = _seDivide;
+        gracePeriod = _gracePeriod;
+        enableSeDivide = _enableSeDivide;
         emit Initialize(baseURI);
     }
 
@@ -196,9 +199,9 @@ contract SquidPlayerNFT is
     function squidEnergyDecrease(uint[] calldata tokenId, uint128[] calldata deduction, address user) public onlyRole(SE_BOOST_ROLE) {
         require(tokenId.length == deduction.length, "Wrong calldata array size");
         for (uint i = 0; i < tokenId.length; i++) {
+            require(_exists(tokenId[i]), "ERC721: token does not exist");
             require(ownerOf(tokenId[i]) == user, "Not owner of token");
             require(!_tokens[tokenId[i]].stakeFreeze, "ERC721: Token frozen");
-            require(_exists(tokenId[i]), "ERC721: token does not exist");
             require(_tokens[tokenId[i]].squidEnergy >= deduction[i], "Wrong deduction value");
             _tokens[tokenId[i]].squidEnergy -= deduction[i];
         }
@@ -207,9 +210,9 @@ contract SquidPlayerNFT is
     function squidEnergyIncrease(uint[] calldata tokenId, uint128[] calldata addition, address user) public onlyRole(SE_BOOST_ROLE) {
         require(tokenId.length == addition.length, "Wrong calldata array size");
         for (uint i = 0; i < tokenId.length; i++) {
+            require(_exists(tokenId[i]), "ERC721: token does not exist");
             require(ownerOf(tokenId[i]) == user, "Not owner of token");
             require(!_tokens[tokenId[i]].stakeFreeze, "ERC721: Token frozen");
-            require(_exists(tokenId[i]), "ERC721: token does not exist");
             Token storage curToken = _tokens[tokenId[i]];
             require((curToken.squidEnergy + addition[i]) <= _rarityLimitsSE[curToken.rarity], "Wrong addition value");
             curToken.squidEnergy += addition[i];

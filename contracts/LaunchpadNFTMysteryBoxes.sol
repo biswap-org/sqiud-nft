@@ -25,9 +25,9 @@ contract LaunchpadNftMysteryBoxes is Ownable, Pausable {
 
     uint public immutable probabilityBase;
 
-    uint boxAmount = 10000; //TODO change in prod
+    uint boxAmount = 10000;
     uint boxPrice = 60 ether;
-    uint maxToUser = 5; //TODO change in prod
+    uint maxToUser = 1;
     uint boxSold;
     uint[] probability;
 
@@ -69,6 +69,7 @@ contract LaunchpadNftMysteryBoxes is Ownable, Pausable {
         dealToken = _dealToken;
         treasuryAddress = _treasuryAddress;
 
+        pause();
 
         //BOX 1 ----------------------------------------------------------------------------
         boxes[0].busNFTEntity.push(BusNFTEntity({busLevel: 2}));

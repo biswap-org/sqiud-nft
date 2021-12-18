@@ -4,18 +4,19 @@ const {BigNumber} = require("ethers");
 const toWei = n => ethers.BigNumber.from(10).pow(18).mul(n);
 const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 
-//proxies
+const deployedContracts = require('deploymentCache.json')
 
-const squidBusNFTAddress = ``
-const squidPlayerNFTAddress = ``
-const gameAddress = ``
-const nftMinterAddress = ``
+const squidBusNFTAddress    = deployedContracts.proxy_squidBusNFT
+const squidPlayerNFTAddress = deployedContracts.proxy_squidPlayerNFT
+const gameAddress           = deployedContracts.proxy_mainSquidGame
+const nftMinterAddress      = deployedContracts.proxy_nftMinter
 
 let squidBusNFT, squidPlayerNFT, game, nftMinter
-const TOKEN_MINTER_ROLE = `0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472`;
-const GAME_ROLE = `0x6a64baf327d646d1bca72653e2a075d15fd6ac6d8cbd7f6ee03fc55875e0fa88`;
-const SE_BOOST_ROLE = `0xfca6bac8781bc66ef196bb85acbfc743e952d50480437ed109b46e883bda687b`;
-const DEFAULT_ADMIN_ROLE = `0x0000000000000000000000000000000000000000000000000000000000000000`;
+
+const TOKEN_MINTER_ROLE     = `0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472`;
+const GAME_ROLE             = `0x6a64baf327d646d1bca72653e2a075d15fd6ac6d8cbd7f6ee03fc55875e0fa88`;
+const SE_BOOST_ROLE         = `0xfca6bac8781bc66ef196bb85acbfc743e952d50480437ed109b46e883bda687b`;
+const DEFAULT_ADMIN_ROLE    = `0x0000000000000000000000000000000000000000000000000000000000000000`;
 
 //Game parameters
 const decreaseWithdrawalFeeByDay = 150 //withdrawalFee decrease on 1,5% by day
