@@ -272,7 +272,7 @@ contract LaunchpadMysteryBoxV2 is Ownable, Pausable {
 
     /*
      * @notice Get info
-     * @param user: User address
+     * @param _user: User address
      */
     function getInfo(address _user)
         public
