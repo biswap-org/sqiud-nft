@@ -9,10 +9,9 @@ import "./interface/ISquidBusNFT.sol";
 import "./interface/ISquidPlayerNFT.sol";
 import "./interface/IOracle.sol";
 
-interface IBiswapNFT {
-    function getRbBalance(address user) external view returns (uint);
-
-    function balanceOf(address user) external view returns (uint);
+interface IBiswapNFT{
+    function getRbBalance(address user) external view returns(uint);
+    function balanceOf(address user) external view returns(uint);
 }
 
 interface IMasterChef {
@@ -25,6 +24,9 @@ interface IMasterChef {
 }
 
 interface IautoBsw {
+    function balanceOf() external view returns(uint);
+    function totalShares() external view returns(uint);
+
     struct UserInfo {
         uint shares; // number of shares for a user
         uint lastDepositedTime; // keeps track of deposited time for potential penalty
@@ -51,10 +53,10 @@ contract LaunchpadMysteryBoxV2 is Ownable, Pausable {
     address public treasuryAddress;
     IERC20 public immutable dealToken;
 
-    uint public totalBoxAmount = 20000;
+    uint  public totalBoxAmount = 20000;
     uint public boxPrice = 60 ether;
-    uint public maxToUser = 1;
-    uint public boxSold;
+    uint  public maxToUser = 1;
+    uint  public boxSold;
     uint[] public probability;
     uint public startBlock;
 
@@ -173,6 +175,8 @@ contract LaunchpadMysteryBoxV2 is Ownable, Pausable {
         boxes[9].playerNFTEntity.push(PlayerNFTEntity({squidEnergy: 3000 ether, rarity: 5}));
         boxes[9].playerNFTEntity.push(PlayerNFTEntity({squidEnergy: 3000 ether, rarity: 5}));
 
+
+
         probability = [5000, 5000, 4000, 3200, 1200, 1000, 250, 250, 80, 20];
 
         require(probability.length == boxes.length, "Wrong arrays length");
@@ -193,17 +197,12 @@ contract LaunchpadMysteryBoxV2 is Ownable, Pausable {
     }
 
     /**
-     * @notice Set check parameters
+     * @notice Set chek parameters
      * @param _minStakeAmount: min stake amount user must have to buy BOX
      * @param _minRBAmount: min RB amount user must have to buy BOX
      * @param _minNFTBalance: Check if user have Robi NFT on balance
      */
-    function setValidationParameters(
-        uint _minStakeAmount,
-        uint _minRBAmount,
-        uint _minNFTBalance,
-        uint _startBlock
-    ) public onlyOwner {
+    function setValidationParameters(uint _minStakeAmount, uint _minRBAmount, uint _minNFTBalance, uint _startBlock) public onlyOwner {
         minStakeAmount = _minStakeAmount;
         minRBAmount = _minRBAmount;
         minNFTBalance = _minNFTBalance;
@@ -218,9 +217,13 @@ contract LaunchpadMysteryBoxV2 is Ownable, Pausable {
         require(block.number >= startBlock, "Current block number less than start block");
         require(userBoughtCount[msg.sender] < maxToUser, "Limit by User reached");
         require(boxSold < totalBoxAmount, "Box sold out");
-        (bool stakeAmountVerified, bool rbBalanceVerified, bool nftBalanceVerified) = checkUserValidation(msg.sender);
+        (
+        bool stakeAmountVerified,
+        bool rbBalanceVerified,
+        bool nftBalanceVerified
+        ) = checkUserValidation(msg.sender);
         require(stakeAmountVerified, "Not enough stake balance");
-        if (minNFTBalance > 0 && minRBAmount > 0) {
+        if(minNFTBalance > 0 && minRBAmount > 0){
             require(rbBalanceVerified || nftBalanceVerified, "Not enough rb balance or no Robi NFT");
         } else {
             require(rbBalanceVerified && nftBalanceVerified, "Not enough rb balance or no Robi NFT");
@@ -241,12 +244,7 @@ contract LaunchpadMysteryBoxV2 is Ownable, Pausable {
         }
         if (_box.playerNFTEntity.length > 0) {
             for (uint i = 0; i < _box.playerNFTEntity.length; i++) {
-                squidPlayerNFT.mint(
-                    msg.sender,
-                    _box.playerNFTEntity[i].squidEnergy,
-                    0,
-                    _box.playerNFTEntity[i].rarity - 1
-                );
+                squidPlayerNFT.mint(msg.sender, _box.playerNFTEntity[i].squidEnergy, 0, _box.playerNFTEntity[i].rarity - 1);
             }
         }
 
@@ -254,15 +252,14 @@ contract LaunchpadMysteryBoxV2 is Ownable, Pausable {
     }
 
     function checkUserValidation(address _user)
-        internal
-        view
-        returns (
-            bool stakeAmountVerified,
-            bool rbBalanceVerified,
-            bool nftBalanceVerified
-        )
-    {
-        uint stakedAmount = masterChef.userInfo(0, _user).amount + autoBsw.userInfo(_user).BswAtLastUserAction;
+    internal view returns
+    (
+        bool stakeAmountVerified,
+        bool rbBalanceVerified,
+        bool nftBalanceVerified
+    ){
+        uint autoBswBalance = autoBsw.balanceOf() * autoBsw.userInfo(_user).shares / autoBsw.totalShares();
+        uint stakedAmount = masterChef.userInfo(0, _user).amount + autoBswBalance;
         uint rbBalance = biswapNFT.getRbBalance(_user);
         uint nftBalance = biswapNFT.balanceOf(_user);
         stakeAmountVerified = stakedAmount >= minStakeAmount;
@@ -270,27 +267,28 @@ contract LaunchpadMysteryBoxV2 is Ownable, Pausable {
         nftBalanceVerified = nftBalance >= minNFTBalance;
     }
 
+
+
     /*
      * @notice Get info
-     * @param _user: User address
+     * @param user: User address
      */
-    function getInfo(address _user)
-        public
-        view
-        returns (
-            uint _boxAmount,
-            uint _boxPrice,
-            uint _maxToUser,
-            uint _boxSold,
-            uint _userBoughtCount,
-            UserVerification memory verif
-        )
-    {
+    function getInfo(address _user) public view returns
+    (
+        uint _boxAmount,
+        uint _boxPrice,
+        uint _maxToUser,
+        uint _boxSold,
+        uint _userBoughtCount,
+        UserVerification memory verif
+    ) {
         _boxAmount = totalBoxAmount;
         _boxPrice = boxPrice;
         _maxToUser = maxToUser;
         _boxSold = boxSold;
         _userBoughtCount = userBoughtCount[_user];
+
+        uint autoBswBalance = autoBsw.balanceOf() * autoBsw.userInfo(_user).shares / autoBsw.totalShares();
 
         verif.minNFTBalance = minNFTBalance;
         verif.minRBAmount = minRBAmount;
@@ -298,10 +296,8 @@ contract LaunchpadMysteryBoxV2 is Ownable, Pausable {
 
         verif.userNFTBalance = _user == address(0) ? 0 : biswapNFT.balanceOf(_user);
         verif.userRBBalance = _user == address(0) ? 0 : biswapNFT.getRbBalance(_user);
-        verif.userStakeBalance = _user == address(0)
-            ? 0
-            : masterChef.userInfo(0, _user).amount + autoBsw.userInfo(_user).BswAtLastUserAction;
-        return (_boxAmount, _boxPrice, _maxToUser, _boxSold, _userBoughtCount, verif);
+        verif.userStakeBalance = _user == address(0) ? 0 : masterChef.userInfo(0, _user).amount + autoBswBalance;
+        return(_boxAmount, _boxPrice, _maxToUser, _boxSold, _userBoughtCount, verif);
     }
 
     /*
