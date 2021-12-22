@@ -1,7 +1,7 @@
 // npx hardhat flatten ./contracts/SquidBusNFT.sol > ./temp/flatten/SquidBusNFTFlatten.sol
 //npx hardhat run scripts/upgradeBusNft.js --network mainnetBSC
 const { ethers, network, hardhat, upgrades} = require(`hardhat`);
-const deployedContracts = require('../deployNFTAddresses.json')
+const deployedContracts = require('./deployNFTAddresses.json')
 
 const busNFTAddress = deployedContracts.proxy_squidBusNFT
 let busNft;

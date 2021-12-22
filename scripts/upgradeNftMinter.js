@@ -1,7 +1,7 @@
 //npx hardhat flatten ./contracts/NFTMinter.sol > ./temp/flatten/NFTMinterFlatten.sol
 //npx hardhat run scripts/upgradeNftMinter.js --network mainnetBSC
 const { ethers, network, hardhat, upgrades} = require(`hardhat`);
-const deployedContracts = require('../deployGameAddresses.json')
+const deployedContracts = require('./deployGameAddresses.json')
 
 const nftMinterAddress = deployedContracts.proxy_nftMinter;
 

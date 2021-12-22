@@ -1,7 +1,7 @@
 //npx hardhat run scripts/deployGameFi.js --network mainnetBSC
 
 const { ethers, network, upgrades } = require(`hardhat`);
-const deployedNFTContracts = require('../deployNFTAddresses.json')
+const deployedNFTContracts = require('./deployNFTAddresses.json')
 
 const fs = require('fs')
 

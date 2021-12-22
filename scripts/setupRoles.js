@@ -4,8 +4,8 @@ const {BigNumber} = require("ethers");
 const toWei = n => ethers.BigNumber.from(10).pow(18).mul(n);
 const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 
-const deployNFTAddresses = require('../deployNFTAddresses.json')
-const deployGameAddresses = require('../deployGameAddresses.json')
+const deployNFTAddresses = require('./deployNFTAddresses.json')
+const deployGameAddresses = require('./deployGameAddresses.json')
 
 const squidBusNFTAddress    = deployNFTAddresses.proxy_squidBusNFT
 const squidPlayerNFTAddress = deployNFTAddresses.proxy_squidPlayerNFT
