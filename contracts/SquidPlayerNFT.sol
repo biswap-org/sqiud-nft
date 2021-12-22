@@ -61,7 +61,7 @@ contract SquidPlayerNFT is
     //Initialize function --------------------------------------------------------------------------------------------
 
     function initialize(string memory baseURI, uint128 _seDivide, uint _gracePeriod, bool _enableSeDivide) public initializer {
-        __ERC721_init("Test Player", "TestPLR"); //("Biswap Squid Players", "BSP"); //BSP - Biswap Squid Players
+        __ERC721_init("Biswap Squid Players", "BSP"); //("Biswap Squid Players", "BSP"); //BSP - Biswap Squid Players
         __ERC721Enumerable_init();
         __AccessControl_init_unchained();
         __ReentrancyGuard_init();
