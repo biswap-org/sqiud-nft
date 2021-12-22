@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721Enumer
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
+
 contract SquidPlayerNFT is
     Initializable,
     ERC721EnumerableUpgradeable,
@@ -60,17 +61,17 @@ contract SquidPlayerNFT is
     //Initialize function --------------------------------------------------------------------------------------------
 
     function initialize(string memory baseURI, uint128 _seDivide, uint _gracePeriod, bool _enableSeDivide) public initializer {
-        __ERC721_init("Biswap Squid Players", "BSP"); //BSP - Biswap Squid Players
+        __ERC721_init("Test Player", "TestPLR"); //("Biswap Squid Players", "BSP"); //BSP - Biswap Squid Players
         __ERC721Enumerable_init();
         __AccessControl_init_unchained();
         __ReentrancyGuard_init();
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _rarityLimitsSE[0] = 500 ether;
-        _rarityLimitsSE[1] = 1200 ether;
-        _rarityLimitsSE[2] = 1700 ether;
-        _rarityLimitsSE[3] = 2300 ether;
-        _rarityLimitsSE[4] = 3300 ether;
+        _rarityLimitsSE[0] = 600 ether;
+        _rarityLimitsSE[1] = 1400 ether;
+        _rarityLimitsSE[2] = 2000 ether;
+        _rarityLimitsSE[3] = 2700 ether;
+        _rarityLimitsSE[4] = 4000 ether;
 
         _internalBaseURI = baseURI;
         seDivide = _seDivide;
@@ -146,7 +147,7 @@ contract SquidPlayerNFT is
         _safeMint(to, tokenId);
     }
 
-    function burn(uint _tokenId) public nonReentrant {
+    function burn(uint _tokenId) public {
         require(_exists(_tokenId), "ERC721: token does not exist");
         require(ownerOf(_tokenId) == msg.sender, "Not token owner");
         _burn(_tokenId);
@@ -177,14 +178,14 @@ contract SquidPlayerNFT is
         address user
     ) public onlyRole(GAME_ROLE) returns (uint128) {
         uint128 seAmount;
-        uint128[] memory decreaseSE = new uint128[](tokenId.length);
+        uint128[] memory SEAfterDec = new uint128[](tokenId.length);
         for (uint i = 0; i < tokenId.length; i++) {
             require(ownerOf(tokenId[i]) == user, "Not owner of token");
             uint128 curSEAmount;
-            (curSEAmount, decreaseSE[i]) = _lockToken(tokenId[i], busyTo, willDecrease);
+            (curSEAmount, SEAfterDec[i]) = _lockToken(tokenId[i], busyTo, willDecrease);
             seAmount += curSEAmount;
         }
-        emit TokensLock(tokenId, busyTo, decreaseSE);
+        emit TokensLock(tokenId, busyTo, SEAfterDec);
         return seAmount;
     }
 
@@ -326,7 +327,7 @@ contract SquidPlayerNFT is
 
     //Private functions --------------------------------------------------------------------------------------------
 
-    function _lockToken(uint _tokenId, uint32 _busyTo, bool willDecrease) private returns (uint128 SEAmount, uint128 decreaseSE) {
+    function _lockToken(uint _tokenId, uint32 _busyTo, bool willDecrease) private returns (uint128 SEAmount, uint128 currentSE) {
         require(_exists(_tokenId), "ERC721: token does not exist");
         require(_busyTo > block.timestamp, "Busy to block must be greater than current block number");
         Token storage _token = _tokens[_tokenId];
@@ -336,10 +337,11 @@ contract SquidPlayerNFT is
         _token.busyTo = _busyTo;
         bool gracePeriodHasPassed = (block.timestamp - _token.createTimestamp) >= gracePeriod;
         uint128 _seDivide = enableSeDivide && gracePeriodHasPassed && willDecrease ? seDivide : 0;
+        uint128 decreaseSE;
         SEAmount = _token.squidEnergy;
         decreaseSE = (SEAmount * _seDivide) / 10000;
         _token.squidEnergy -= decreaseSE;
-        return (SEAmount, decreaseSE);
+        return (SEAmount, _token.squidEnergy);
     }
 
     function _setPlayerContract(uint _tokenId, uint32 _contractEndTimestamp) private {

@@ -43,7 +43,7 @@ contract SquidBusNFT is
         uint _maxBusBalance,
         uint _busAdditionPeriod
     ) public initializer {
-        __ERC721_init("Biswap Squid Buses", "BSB");//BSB - Biswap Squid Buses
+        __ERC721_init("TESTBus", "TESTBSB");  //("Biswap Squid Buses", "BSB");//BSB - Biswap Squid Buses
         __ERC721Enumerable_init();
         __AccessControl_init_unchained();
         __ReentrancyGuard_init();

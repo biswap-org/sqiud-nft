@@ -51,6 +51,10 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
     ChanceTableBus[] public busChance; //value: Bus level
     ChanceTablePlayer[] public playerChance; //Player chance table
 
+    bool public checkPeriodPlayerLimits;
+    uint public periodLimitPlayers; //limit players by period
+    mapping(uint => uint) public playersMintCount; //Count mint players by 6 hours (6 hours count => players count)
+
     event TokenMint(address indexed to, uint indexed tokenId, uint8 rarity, uint128 squidEnergy); //PlayerNFT contract event
     event TokenMint(address indexed to, uint indexed tokenId, uint8 level); //Bus NFT event
 
@@ -106,6 +110,11 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
     }
 
     //External functions --------------------------------------------------------------------------------------------
+
+    function setPeriodLimitPlayers(uint newLimit, bool enabled)  external onlyRole(DEFAULT_ADMIN_ROLE) {
+        periodLimitPlayers = newLimit;
+        checkPeriodPlayerLimits = enabled;
+    }
 
     function setPrices(uint _busPriceInUSD, uint _playerPriceInUSD) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_busPriceInUSD != 0 && _playerPriceInUSD != 0, "Wrong price");
@@ -167,6 +176,10 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
 
     function buyPlayer() public notContract nonReentrant whenNotPaused {
         require(busNFT.seatsInBuses(msg.sender) > playerNFT.balanceOf(msg.sender), "No free places in buses");
+        if(checkPeriodPlayerLimits){
+            require(playersMintCount[block.timestamp / (6*3600)] < periodLimitPlayers, "Mint over period limit");
+            playersMintCount[block.timestamp / (6*3600)]  += 1;
+        }
         uint priceInBSW = _getPriceInBSW(playerPriceInUSD);
         bswToken.safeTransferFrom(msg.sender, treasuryAddressPlayer, priceInBSW);
 
@@ -202,6 +215,12 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
     function getPricesInBSW() public view returns(uint busPrice, uint playerPrice){
         busPrice = _getPriceInBSW(busPriceInUSD);
         playerPrice = _getPriceInBSW(playerPriceInUSD);
+    }
+
+    function getLimitPlayerParameters() public view returns(uint totalLimit, uint mintedOnPeriod, uint timeLeft){
+        totalLimit = periodLimitPlayers;
+        mintedOnPeriod = playersMintCount[block.timestamp / (6*3600)];
+        timeLeft = 6*3600 - block.timestamp % (6*3600);
     }
 
     //Internal functions --------------------------------------------------------------------------------------------

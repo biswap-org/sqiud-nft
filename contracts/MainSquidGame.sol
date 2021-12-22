@@ -10,7 +10,9 @@ import "./interface/ISquidBusNFT.sol";
 import "./interface/ISquidPlayerNFT.sol";
 import "./interface/IOracle.sol";
 
+
 interface IMasterChef {
+
     struct UserInfo {
         uint amount;
         uint rewardDebt;
@@ -20,6 +22,9 @@ interface IMasterChef {
 }
 
 interface IautoBsw {
+    function balanceOf() external view returns(uint);
+    function totalShares() external view returns(uint);
+
     struct UserInfo {
         uint shares; // number of shares for a user
         uint lastDepositedTime; // keeps track of deposited time for potential penalty
@@ -29,6 +34,7 @@ interface IautoBsw {
 
     function userInfo(address user) external view returns (UserInfo memory);
 }
+
 
 contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -89,9 +95,6 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint public decreaseWithdrawalFeeByDay; //150: -1,5% by day
     uint public withdrawalFee; //2700: 27%
     uint public recoveryTime; // 48h = 172800 for lock tokens after game play
-    uint128 public seDivide; //TODO del in prod
-    uint public gracePeriod; //TODO del in prod
-    bool public enableSeDivide; //TODO del in prod
 
     address public treasuryAddress;
 
@@ -106,7 +109,7 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     event GameDisable(uint gameIndex);
     event GameEnable(uint gameIndex);
     event GamePlay(address indexed user, uint indexed gameIndex, bool userWin, address[] rewardTokens, uint128[] rewardAmount);
-    event Withdrew(address indexed user);
+    event Withdrew(address indexed user, RewardToken[] _rewardBalance);
     event RewardTokenChanged(uint gameIndex);
 
     //Initialize function --------------------------------------------------------------------------------------------
@@ -162,8 +165,9 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         playerContracts.push(_playerContract);
     }
 
-    function playerContractState(uint _pcIndex, bool _state) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function playerContractState(uint _pcIndex, uint128 newPrice, bool _state) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_pcIndex < playerContracts.length, "Wrong index out of bound");
+        playerContracts[_pcIndex].priceInUSD = newPrice;
         playerContracts[_pcIndex].enable = _state;
     }
 
@@ -199,6 +203,12 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         delete games[_gameIndex].rewardTokens;
         for(uint i = 0; i < _rewardTokens.length; i++){
             games[_gameIndex].rewardTokens.push(_rewardTokens[i]);
+        }
+        Game memory _game = games[_gameIndex];
+        for (uint i = 0; i < _game.rewardTokens.length; i++) {
+            if (!_tokenInArray(_game.rewardTokens[i].token)) {
+                rewardTokens.push(_game.rewardTokens[i].token);
+            }
         }
         emit RewardTokenChanged(_gameIndex);
     }
@@ -262,9 +272,12 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
             ? 0
             : withdrawalFee - (multipl * decreaseWithdrawalFeeByDay);
 
+        RewardToken[] memory _rewardBalance = new RewardToken[](rewardTokens.length);
         for (uint i = 0; i < rewardTokens.length; i++) {
             address currentToken = rewardTokens[i];
             uint128 currentBalance = userBalances[msg.sender][currentToken];
+            _rewardBalance[i].token = currentToken;
+            _rewardBalance[i].rewardInToken = userBalances[msg.sender][currentToken];
             delete userBalances[msg.sender][currentToken];
             if (currentBalance > 0) {
                 uint fee = (currentBalance * calcFee) / 10000;
@@ -274,10 +287,11 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         }
         //MSG-03
         delete withdrawTimeLock[msg.sender];
-        emit Withdrew(msg.sender);
+        emit Withdrew(msg.sender, _rewardBalance);
     }
     
     function buyContracts(uint[] memory _tokensId, uint _contractIndex) public notContract whenNotPaused nonReentrant {
+        require(_tokensId.length > 0, "Cant by contracts without tokensId");
         require(_contractIndex < playerContracts.length, "Wrong index out of bound");
         uint priceInBSW = _getPriceInBSW(playerContracts[_contractIndex].priceInUSD);
         uint totalCost = priceInBSW * _tokensId.length;
@@ -292,13 +306,15 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     function userInfo(address _user) public view returns (UserInfo memory) {
         UserInfo memory _userInfo;
+
+        uint autoBswBalance = autoBsw.balanceOf() * autoBsw.userInfo(_user).shares / autoBsw.totalShares();
         _userInfo.busBalance = busNFT.balanceOf(_user);
         _userInfo.allowedBusBalance = busNFT.allowedBusBalance(_user);
         _userInfo.playerBalance = playerNFT.balanceOf(_user);
         _userInfo.allowedSeatsInBuses = busNFT.seatsInBuses(_user);
         _userInfo.availableSEAmount = playerNFT.availableSEAmount(_user);
         _userInfo.totalSEAmount = playerNFT.totalSEAmount(_user);
-        _userInfo.stakedAmount = masterChef.userInfo(0, _user).amount + autoBsw.userInfo(_user).BswAtLastUserAction;
+        _userInfo.stakedAmount = masterChef.userInfo(0, _user).amount + autoBswBalance;
         _userInfo.bswBalance = IERC20Upgradeable(bswToken).balanceOf(_user);
         _userInfo.secToNextBus = busNFT.secToNextBus(_user);
         RewardToken[] memory _rewardBalance = new RewardToken[](rewardTokens.length);
@@ -354,8 +370,8 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     function _checkMinStakeAmount(address _user, uint _gameIndex) internal view returns (bool) {
         require(_gameIndex < games.length, "Game index out of bound");
-        uint stakeAmount = masterChef.userInfo(0, _user).amount;
-        stakeAmount += autoBsw.userInfo(_user).BswAtLastUserAction;
+        uint autoBswBalance = autoBsw.balanceOf() * autoBsw.userInfo(_user).shares / autoBsw.totalShares();
+        uint stakeAmount = masterChef.userInfo(0, _user).amount + autoBswBalance;
         return stakeAmount >= games[_gameIndex].minStakeAmount;
     }
 
