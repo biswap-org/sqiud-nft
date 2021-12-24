@@ -111,6 +111,7 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     event GamePlay(address indexed user, uint indexed gameIndex, bool userWin, address[] rewardTokens, uint128[] rewardAmount);
     event Withdrew(address indexed user, RewardToken[] _rewardBalance);
     event RewardTokenChanged(uint gameIndex);
+    event GameSetNewGameParam(uint gameIndex);
 
     //Initialize function --------------------------------------------------------------------------------------------
 
@@ -198,6 +199,14 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         emit GameEnable(_gameIndex);
     }
 
+    function setGameParameters(uint _gameIndex, uint128 _minSeAmount, uint128 _minStakeAmount, uint _chanceToWin) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        Game storage _game = games[_gameIndex];
+        _game.minStakeAmount = _minStakeAmount;
+        _game.minSeAmount = _minSeAmount;
+        _game.chanceToWin = _chanceToWin;
+        emit GameSetNewGameParam(_gameIndex);
+    }
+
     function setRewardTokensToGame(uint _gameIndex, RewardToken[] calldata _rewardTokens) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_gameIndex < games.length, "Index out of bound");
         delete games[_gameIndex].rewardTokens;
@@ -222,8 +231,8 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     }
 
     function setWithdrawalFee(uint _decreaseWithdrawalFeeByDay, uint _withdrawalFee)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+    external
+    onlyRole(DEFAULT_ADMIN_ROLE)
     {
         //MSG-02
         require(_withdrawalFee <= MAX_WITHDRAWAL_FEE, "Incorrect value withdrawal Fee");
@@ -254,9 +263,9 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint128[] memory _rewardAmount = new uint128[](_game.rewardTokens.length);
         if (userWin) {
             for (uint i = 0; i < _game.rewardTokens.length; i++) {
-                    _rewardAmount[i] = _game.rewardTokens[i].rewardInToken == 0 ?
-                    _getPriceInToken(_game.rewardTokens[i].token, _game.rewardTokens[i].rewardInUSD) :
-                    _game.rewardTokens[i].rewardInToken;
+                _rewardAmount[i] = _game.rewardTokens[i].rewardInToken == 0 ?
+                _getPriceInToken(_game.rewardTokens[i].token, _game.rewardTokens[i].rewardInUSD) :
+                _game.rewardTokens[i].rewardInToken;
                 _rewardTokens[i] = _game.rewardTokens[i].token;
             }
             _balanceIncrease(msg.sender, _rewardTokens, _rewardAmount);
@@ -269,8 +278,8 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint calcFee;
         uint multipl = (block.timestamp - withdrawTimeLock[msg.sender]) / 86400;
         calcFee = (multipl * decreaseWithdrawalFeeByDay) >= withdrawalFee
-            ? 0
-            : withdrawalFee - (multipl * decreaseWithdrawalFeeByDay);
+        ? 0
+        : withdrawalFee - (multipl * decreaseWithdrawalFeeByDay);
 
         RewardToken[] memory _rewardBalance = new RewardToken[](rewardTokens.length);
         for (uint i = 0; i < rewardTokens.length; i++) {
@@ -289,7 +298,7 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         delete withdrawTimeLock[msg.sender];
         emit Withdrew(msg.sender, _rewardBalance);
     }
-    
+
     function buyContracts(uint[] memory _tokensId, uint _contractIndex) public notContract whenNotPaused nonReentrant {
         require(_tokensId.length > 0, "Cant by contracts without tokensId");
         require(_contractIndex < playerContracts.length, "Wrong index out of bound");
@@ -326,10 +335,10 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint calcFee;
         uint multipl = (block.timestamp - withdrawTimeLock[_user]) / 1 days;
         calcFee = (multipl * decreaseWithdrawalFeeByDay) >= withdrawalFee
-            ? 0
-            : withdrawalFee - (multipl * decreaseWithdrawalFeeByDay);
+        ? 0
+        : withdrawalFee - (multipl * decreaseWithdrawalFeeByDay);
         _userInfo.currentFee = calcFee;
-    return (_userInfo);
+        return (_userInfo);
     }
 
     function getUserRewardBalances(address _user) public view returns (address[] memory, uint128[] memory) {
@@ -358,8 +367,8 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
 
             for(uint j = 0; j < gamesInfo[i].game.rewardTokens.length; j++){
                 gamesInfo[i].game.rewardTokens[j].rewardInToken = gamesInfo[i].game.rewardTokens[j].rewardInToken == 0 ?
-                    _getPriceInToken(gamesInfo[i].game.rewardTokens[j].token, gamesInfo[i].game.rewardTokens[j].rewardInUSD) :
-                    gamesInfo[i].game.rewardTokens[j].rewardInToken;
+                _getPriceInToken(gamesInfo[i].game.rewardTokens[j].token, gamesInfo[i].game.rewardTokens[j].rewardInUSD) :
+                gamesInfo[i].game.rewardTokens[j].rewardInToken;
             }
         }
         return(gamesInfo);

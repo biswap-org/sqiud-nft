@@ -5,13 +5,16 @@
 
 const hre = require('hardhat');
 const { ethers } = require(`hardhat`);
-const deployedContracts = require('../deployGameAddresses.json')
-const deployedContractsNFT = require('../deployNFTAddresses.json')
+// const deployedContracts = require('../deployGameAddresses.json')
+// const deployedContractsNFT = require('../deployNFTAddresses.json')
 
 const contractAddresses = [
     // deployedContractsNFT.proxy_squidPlayerNFT
-    deployedContracts.proxy_mainSquidGame,
+    // deployedContracts.proxy_mainSquidGame,
     // deployedContracts.proxy_nftMinter
+    // '0xb00ED7E3671Af2675c551a1C26Ffdcc5b425359b',
+    '0xCCc78DF56470b70cb901FCc324A8fBbE8Ab5304B',
+    '0x17284C1920436Ba331E9Db7e87D372dCDABAc2E5'
 ]
 
 async function getImplementationAddress(proxyAddress) {

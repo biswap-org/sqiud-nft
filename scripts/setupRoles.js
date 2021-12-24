@@ -34,7 +34,7 @@ const enabledLimitMintPlayer = true;
 
 const playerContracts = {
     1: [15*24*3600, toBN(15, 18), true], //15 days
-    2: [30*24*3600, toBN(289, 17), true], //30 days
+    2: [30*24*3600, toBN(285, 17), true], //30 days
     3: [60*24*3600, toBN(51,18),true] //60 days
 }
 
