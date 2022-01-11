@@ -51,6 +51,9 @@ contract SquidPlayerNFT is
     uint public gracePeriod; //45d = 3 888 000; Period in seconds when SE didnt decrease after game
     bool public enableSeDivide; //enabled decrease SE
 
+    uint public mintLockDuration; // lock time after mint in seconds
+    uint public mintLockStartTime; // timestamp after which mint lock time enabled
+
     event Initialize(string baseURI);
     event TokenMint(address indexed to, uint indexed tokenId, uint8 rarity, uint128 squidEnergy);
     event TokensLock(uint[] _tokenId, uint32 busyTo, uint128[] decreaseSE);
@@ -102,6 +105,11 @@ contract SquidPlayerNFT is
         gracePeriod = _gracePeriod;
 
         emit ChangeSEDivideState(_enableSeDivide, _seDivide, _gracePeriod);
+    }
+
+    function setMintLockTime(uint _mintLockTimeDuration, uint _mintLockStartTime) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        mintLockDuration = _mintLockTimeDuration;
+        mintLockStartTime = _mintLockStartTime;
     }
 
     function tokenFreeze(uint _tokenId) external onlyRole(TOKEN_FREEZER) {
@@ -321,6 +329,9 @@ contract SquidPlayerNFT is
         address to,
         uint tokenId
     ) internal virtual override(ERC721EnumerableUpgradeable) {
+        if(_tokens[tokenId].createTimestamp > mintLockStartTime && from != address(0))
+            require((block.timestamp - _tokens[tokenId].createTimestamp) >= mintLockDuration, "mint lock time not ended");
+
         require(!_tokens[tokenId].stakeFreeze, "ERC721: Token frozen");
         super._beforeTokenTransfer(from, to, tokenId);
     }
