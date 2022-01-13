@@ -1,15 +1,13 @@
 // npx hardhat flatten ./contracts/SquidPlayerNFT.sol > ./temp/flatten/SquidPlayerNFTFlatten.sol
 //npx hardhat run scripts/upgradePlayerNft.js --network mainnetBSC
 const { ethers, network, hardhat, upgrades} = require(`hardhat`);
-const deployedContracts = require('../deployNFTAddresses.json')
+const deployedContracts = require('./deployNFTAddresses.json')
+
+//Owner 0xbafefe87d57d4c5187ed9bd5fab496b38abdd5ff
 
 const playerNFTAddress = deployedContracts.proxy_squidPlayerNFT
 
 let playerNft;
-
-//lock timestamp parameters
-let mintLockStartTime;
-const mintLockTimeDuration = 3600*24*7; // 7 days duration
 
 async function main() {
     const [deployer] = await ethers.getSigners();
@@ -22,11 +20,6 @@ async function main() {
     await playerNft.deployed();
     console.log(`NFT player upgraded`);
 
-    mintLockStartTime = (await ethers.provider.getBlock('latest')).timestamp;
-    console.log(`Set lock timestamp parameters: start timestamp: ${mintLockStartTime}, lock duration ${mintLockTimeDuration}`);
-
-    let tx = await playerNft.setMintLockTime(mintLockTimeDuration, mintLockStartTime, {nonce: ++nonce, gasLimit: 5e6});
-    console.log(`Transaction status`, (await tx.wait()).status)
 }
 
 main()

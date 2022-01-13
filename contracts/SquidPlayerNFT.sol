@@ -329,7 +329,7 @@ contract SquidPlayerNFT is
         address to,
         uint tokenId
     ) internal virtual override(ERC721EnumerableUpgradeable) {
-        if(_tokens[tokenId].createTimestamp > mintLockStartTime && from != address(0))
+        if(_tokens[tokenId].createTimestamp > mintLockStartTime && from != address(0) && to != address(0))
             require((block.timestamp - _tokens[tokenId].createTimestamp) >= mintLockDuration, "mint lock time not ended");
 
         require(!_tokens[tokenId].stakeFreeze, "ERC721: Token frozen");

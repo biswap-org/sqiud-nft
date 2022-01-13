@@ -1,42 +1,43 @@
 // npx hardhat run scripts/changeRewardTokens.js --network mainnetBSC
 const { ethers, network } = require(`hardhat`);
 
-
 const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 
-const deployGameAddresses = require('../deployGameAddresses.json')
+const deployGameAddresses = require('./deployGameAddresses.json')
+
+//Owner 0xbafefe87d57d4c5187ed9bd5fab496b38abdd5ff
 
 const gameAddress =deployGameAddresses.proxy_mainSquidGame
 
-// Change BSW / WBNB payments (85% / 15%)
+// Change BSW / WBNB payments (90% / 10%)
 const tokenRewards = {
     0:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(630,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(111,16), 0]
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(667,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(74,16), 0]
     ],
     1:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(1314,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(232,16), 0]
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(1391,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(155,16), 0]
     ],
     2:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(2007,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(354,16), 0]
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(2125,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(236,16), 0]
     ],
     3:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(2708,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(478,16), 0]
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(2867,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(319,16), 0]
     ],
     4:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(3430,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(605,16), 0]
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(3632,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(404,16), 0]
     ],
     5:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(4181,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(738,16), 0]
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(4427,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(492,16), 0]
     ],
     6:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(4987,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(880,16), 0]
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(5281,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(587,16), 0]
     ],
 
 }
