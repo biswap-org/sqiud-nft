@@ -4,10 +4,9 @@ const { ethers, network } = require(`hardhat`);
 
 const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 
-// const deployGameAddresses = require('./deployGameAddresses.json')
+const deployGameAddresses = require('./deployGameAddresses.json')
 
-// const gameAddress =deployGameAddresses.proxy_mainSquidGame
-const gameAddress = `0xB08052D1EcD6Eb2Cafd2e829997d39a984B71eC0`;
+const gameAddress =deployGameAddresses.proxy_mainSquidGame
 
 // Change BSW / WBNB payments (95% / 5%) with add BFG
 const tokenRewards = {
