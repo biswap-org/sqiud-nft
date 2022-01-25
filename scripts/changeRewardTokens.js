@@ -4,16 +4,17 @@ const { ethers, network } = require(`hardhat`);
 
 const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 
-const deployGameAddresses = require('./deployGameAddresses.json')
+// const deployGameAddresses = require('./deployGameAddresses.json')
 
-const gameAddress =deployGameAddresses.proxy_mainSquidGame
+// const gameAddress =deployGameAddresses.proxy_mainSquidGame
+const gameAddress = `0xB08052D1EcD6Eb2Cafd2e829997d39a984B71eC0`;
 
 // Change BSW / WBNB payments (95% / 5%) with add BFG
 const tokenRewards = {
     0:[
         [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(704,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(10, 18)],
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(37,16), 0]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(37,16), 0],
+        [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(10, 18)]
     ],
     1:[
         [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(1468,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
@@ -25,8 +26,8 @@ const tokenRewards = {
     ],
     3:[
         [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(3027,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(25, 18)],
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(159,16), 0]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(159,16), 0],
+        [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(25, 18)]
     ],
     4:[
         [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(3834,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
@@ -38,8 +39,8 @@ const tokenRewards = {
     ],
     6:[
         [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(5574,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
-        [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(50, 18)],
-        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(293,16), 0]
+        [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(293,16), 0],
+        [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(50, 18)]
     ],
 
 }
