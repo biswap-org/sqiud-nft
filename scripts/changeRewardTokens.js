@@ -8,9 +8,10 @@ const deployGameAddresses = require('./deployGameAddresses.json')
 
 const gameAddress =deployGameAddresses.proxy_mainSquidGame
 
-// Change BSW / WBNB payments (95% / 5%)
+// Change BSW / WBNB payments (95% / 5%) with add BFG
 const tokenRewards = {
     0:[
+        [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(10, 18)],
         [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(704,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
         [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(37,16), 0]
     ],
@@ -23,6 +24,7 @@ const tokenRewards = {
         [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(118,16), 0]
     ],
     3:[
+        [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(25, 18)],
         [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(3027,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
         [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(159,16), 0]
     ],
@@ -35,6 +37,7 @@ const tokenRewards = {
         [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(246,16), 0]
     ],
     6:[
+        [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(50, 18)],
         [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, toBN(5574,16), 0], //rewardTokens: [address, rewardInUSD, rewardInToken]
         [`0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`, toBN(293,16), 0]
     ],
