@@ -4,7 +4,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 
 let deployer, squidPlayerNFT, claimer, bnft;
-const tokenIds = require('../ids.json').tokenIds
+const tokenIds = require('../ids2.json').ids
 const playerNFTAddress = `0xb00ED7E3671Af2675c551a1C26Ffdcc5b425359b`
 const binanceNFTAddress = `0x1dDB2C0897daF18632662E71fdD2dbDC0eB3a9Ec`
 
@@ -38,8 +38,6 @@ const main = async() => {
     await claimer.setVouchersId(tokenIds.slice(500,  1000),{nonce: ++nonce,gasLimit: 12e6}); console.log('setVouchersId (500, 1000)')
     await claimer.setVouchersId(tokenIds.slice(1000, 1500),{nonce: ++nonce,gasLimit: 12e6}); console.log('setVouchersId (1000, 1500)')
     await claimer.setVouchersId(tokenIds.slice(1500, 2000),{nonce: ++nonce,gasLimit: 12e6}); console.log('setVouchersId (1500, 2000)')
-    await claimer.setVouchersId(tokenIds.slice(2000, 2500),{nonce: ++nonce,gasLimit: 12e6}); console.log('setVouchersId (2000, 2500)')
-    await claimer.setVouchersId(tokenIds.slice(2500, 3000),{nonce: ++nonce,gasLimit: 12e6}); console.log('setVouchersId (2500,3000)')
 
 
     console.log('grantRole...')
@@ -54,7 +52,6 @@ const main = async() => {
     console.log('Claimer:', claimer.address)
 
 }
-
 
 main().then(() => process.exit(0)).catch( error => console.error(error) && process.exit(1))
 
