@@ -8,6 +8,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interface/ISquidPlayerNFT.sol";
 import "./interface/IBNFT.sol";
 
+/*
+ * @dev: For claim 2 wave vouchers
+ */
 contract NFTClaimer is Ownable, Pausable, ReentrancyGuard {
 
     uint public playerChancesBase;
@@ -39,11 +42,10 @@ contract NFTClaimer is Ownable, Pausable, ReentrancyGuard {
 
         playerChancesBase = 1000;
 
-        playerChance.push(ChanceTablePlayer({rarity: 1, maxValue: 500, minValue: 400, chance: 450}));
-        playerChance.push(ChanceTablePlayer({rarity: 2, maxValue: 1200, minValue: 600, chance: 370}));
+        playerChance.push(ChanceTablePlayer({rarity: 2, maxValue: 1200, minValue: 600, chance: 820}));
         playerChance.push(ChanceTablePlayer({rarity: 3, maxValue: 1700, minValue: 1300, chance: 120}));
         playerChance.push(ChanceTablePlayer({rarity: 4, maxValue: 2300, minValue: 1800, chance: 50}));
-        playerChance.push(ChanceTablePlayer({rarity: 5, maxValue: 3000, minValue: 2400, chance: 10}));
+        playerChance.push(ChanceTablePlayer({rarity: 5, maxValue: 3300, minValue: 2400, chance: 10}));
     }
 
     //Modifiers -------------------------------------------------------------------------------------------------------
@@ -68,8 +70,8 @@ contract NFTClaimer is Ownable, Pausable, ReentrancyGuard {
     }
 
     function setPlayerChanceTable(ChanceTablePlayer[] calldata _newPlayerChanceTable)
-        external
-        onlyOwner
+    external
+    onlyOwner
     {
         uint _playerChancesBase = 0;
         delete playerChance;

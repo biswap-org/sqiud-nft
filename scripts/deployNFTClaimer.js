@@ -42,6 +42,7 @@ const main = async() => {
 
     console.log('grantRole...')
     const TOKEN_MINTER_ROLE = await squidPlayerNFT.TOKEN_MINTER_ROLE()
+    await squidPlayerNFT.revokeRole(TOKEN_MINTER_ROLE, `0x85d24b0762087869aE0cae4A27B63c9933BdE40c`, {nonce: ++nonce,gasLimit: 5e6});
     await squidPlayerNFT.grantRole(TOKEN_MINTER_ROLE, claimer.address, {nonce: ++nonce,gasLimit: 5e6})
     console.log('OK!')
 
