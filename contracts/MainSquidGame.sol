@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "./interface/ISquidBusNFT.sol";
 import "./interface/ISquidPlayerNFT.sol";
 import "./interface/IOracle.sol";
+import "./interface/IBiswapPair.sol";
 
 
 interface IMasterChef {
@@ -104,6 +105,8 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     mapping(address => uint) public withdrawTimeLock; //user address => block.timestamp; To calc withdraw fee
     mapping(address => uint) public firstGameCountdownSE; //user address => block.timestamp Grace period after this - SEDecrease enabled
     mapping(address => mapping(address => uint128)) userBalances; //user balances: user address => token address => amount
+
+    IBiswapPair private pairForRand;
 
     event GameAdded(uint gameIndex);
     event GameDisable(uint gameIndex);
@@ -311,6 +314,46 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         IERC20Upgradeable(bswToken).safeTransferFrom(msg.sender, treasuryAddress, totalCost);
         playerNFT.setPlayerContract(_tokensId, uint32(block.timestamp + playerContracts[_contractIndex].duration), msg.sender);
     }
+/**
+  * @dev Change calculate contract cost
+    function buyContracts(uint[] memory _tokensId, uint _contractIndex) public notContract whenNotPaused nonReentrant {
+        require(_tokensId.length > 0, "Cant by contracts without tokensId");
+        require(_contractIndex < playerContracts.length, "Wrong index out of bound");
+        (uint totalCost,) = getContractCost(_tokensId, _contractIndex);
+        IERC20Upgradeable(bswToken).safeTransferFrom(msg.sender, treasuryAddress, totalCost);
+        playerNFT.setPlayerContract(_tokensId, uint32(block.timestamp + playerContracts[_contractIndex].duration), msg.sender);
+    }
+
+    function getContractCost(uint[] memory _playersId, uint _contractIndex) public view returns(uint totalCost, uint[] memory playersCost) {
+        uint priceInBSW = _getPriceInBSW(playerContracts[_contractIndex].priceInUSD);
+        playersCost = new uint[](_playersId.length);
+        (uint totalSeAmount, uint[] memory seAmount) = playerNFT.getSEAmountFromTokensId(_playersId);
+        for(uint i = 0; i < playersCost.length; i++){
+            playersCost[i] = priceInBSW * seAmount[i] / 1e18;
+        }
+        totalCost = priceInBSW * totalSeAmount / 1e18;
+    }
+
+    function getUserContractsCost(address _user) public view returns(uint[] memory, uint[][] memory ){
+        ISquidPlayerNFT.TokensViewFront[] memory userPlayers = playerNFT.arrayUserPlayers(_user);
+        uint countWOContract;
+        for(uint i = 0; i < userPlayers.length; i++){
+            if(userPlayers[i].contractEndTimestamp > block.number) countWOContract++;
+        }
+        uint[] memory playersId = new uint[](countWOContract);
+
+        uint[][] memory contractCost = new uint[][](countWOContract);
+        for(uint i = 0; i < userPlayers.length; i++){
+            if(userPlayers[i].contractEndTimestamp > block.number){
+                playersId[--countWOContract] = userPlayers[i].tokenId;
+            }
+        }
+        for(uint i = 0; i < playerContracts.length; i++){
+            (, contractCost[i]) = getContractCost(playersId, i);
+        }
+        return(playersId, contractCost);
+    }
+*/
 
     function checkGameRequirements(address _user) public view returns(bool busAndPlayersAmount){
         busAndPlayersAmount = _checkBusAndPlayersAmount(_user);
