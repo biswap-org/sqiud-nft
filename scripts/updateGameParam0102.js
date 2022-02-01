@@ -82,9 +82,9 @@ async function main() {
     //Task BSW-1359
     console.log(`Start deploying upgrade Game NFT contract`);
     const GameNft = await ethers.getContractFactory(`MainSquidGame`);
-    gameNft = await upgrades.upgradeProxy(gameNFTAddress, GameNft, {nonce: ++nonce, gasLimit: 3e6});
-    await gameNft.deployed();
-    console.log(`NFT game upgraded. New implementation address ${await getImplementationAddress(gameNFTAddress)}`);
+    // gameNft = await upgrades.upgradeProxy(gameNFTAddress, GameNft, {nonce: ++nonce, gasLimit: 3e6});
+    // await gameNft.deployed();
+    // console.log(`NFT game upgraded. New implementation address ${await getImplementationAddress(gameNFTAddress)}`);
 
     console.log(`Set holder pool in game`);
     gameNft = await GameNft.attach(gameNFTAddress);
