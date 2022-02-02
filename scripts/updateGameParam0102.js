@@ -10,9 +10,9 @@ const gameNFTAddress = deployedContracts.proxy_mainSquidGame;
 let gameNft;
 const holderPoolAddress = `0xa4b20183039b2F9881621C3A03732fBF0bfdff10`;
 
-// $18.00 - 15 днів
-// $34.2 - 30 днів
-// $61.2 - 60 днів
+// $18.00 - 15 days
+// $34.2 - 30 days
+// $61.2 - 60 days
 const playerContracts = {
     0: [15*24*3600, toBN(18, 18), true], //15 days
     1: [30*24*3600, toBN(342, 17), true], //30 days
