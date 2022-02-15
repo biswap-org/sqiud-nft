@@ -1,7 +1,7 @@
-//npx hardhat run scripts/updateGameParam0802.js --network mainnetBSC
+//npx hardhat run scripts/updateGameParam1502.js --network mainnetBSC
 
 const { ethers, network } = require(`hardhat`);
-const deployedContracts = require('../deployGameAddresses.json')
+const deployedContracts = require('./deployGameAddresses.json')
 
 const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 
