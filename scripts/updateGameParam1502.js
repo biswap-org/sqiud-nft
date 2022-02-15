@@ -9,9 +9,9 @@ const gameNFTAddress = deployedContracts.proxy_mainSquidGame;
 
 let gameNft;
 
-//15 days 21$
-// 30 days 39,9$
-// 60 days 71,4$
+//15 days 24$
+// 30 days 45,6$
+// 60 days 81,6$
 const playerContracts = {
     0: [15*24*3600, toBN(24, 18), true], //15 days
     1: [30*24*3600, toBN(456, 17), true], //30 days
