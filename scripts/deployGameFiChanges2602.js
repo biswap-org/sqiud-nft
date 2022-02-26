@@ -4,9 +4,9 @@ const deployedNFTContracts = require('./deployNFTAddresses.json')
 const deployedGameContracts = require('./deployGameAddresses.json')
 const {min} = require("mocha/lib/reporters");
 
-const gameNFTAddress = deployedNFTContracts.proxy_mainSquidGame
-const nftMinterAddress = deployedNFTContracts.proxy_nftMinter
-const playerNFTAddress = deployedGameContracts.proxy_squidPlayerNFT
+const gameNFTAddress = deployedGameContracts.proxy_mainSquidGame
+const nftMinterAddress = deployedGameContracts.proxy_nftMinter
+const playerNFTAddress = deployedNFTContracts.proxy_squidPlayerNFT
 
 
 let playerNft, nftMinter, gameNft;
