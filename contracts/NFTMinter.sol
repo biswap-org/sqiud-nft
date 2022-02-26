@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "./interface/ISquidBusNFT.sol";
 import "./interface/ISquidPlayerNFT.sol";
 import "./interface/IOracle.sol";
+import "./interface/IBiswapPair.sol";
 
 
 contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
@@ -55,8 +56,19 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
     uint public periodLimitPlayers; //limit players by period
     mapping(uint => uint) public playersMintCount; //Count mint players by 6 hours (6 hours count => players count)
 
-    event TokenMint(address indexed to, uint indexed tokenId, uint8 rarity, uint128 squidEnergy); //PlayerNFT contract event
-    event TokenMint(address indexed to, uint indexed tokenId, uint8 level); //Bus NFT event
+    IBiswapPair private pairForRand;
+
+    mapping(address => bool) public inQueue; //User in queue
+    struct Queue{
+        address caller;
+        uint blockNumber;
+    }
+    Queue[] public playerQueue;
+    Queue[] public busQueue;
+    uint nonce;
+
+    // event TokenMint(address indexed to, uint indexed tokenId, uint8 rarity, uint128 squidEnergy); //PlayerNFT contract event
+    // event TokenMint(address indexed to, uint indexed tokenId, uint8 level); //Bus NFT event
 
     //Initialize function --------------------------------------------------------------------------------------------
 
@@ -131,6 +143,10 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         treasuryAddressPlayer = _treasuryAddressPlayer;
     }
 
+    function setPairForRand(IBiswapPair _pair) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        pairForRand = _pair;
+    }
+
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
@@ -164,18 +180,21 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
 
     //Public functions ----------------------------------------------------------------------------------------------
 
-    function buyBus() public notContract nonReentrant whenNotPaused {
+    function buyBus() public notContract whenNotPaused {
+        require(!inQueue[msg.sender], "Wait queue");
         require(busNFT.allowedUserToMintBus(msg.sender), "Mint bus not allowed. Balance over limit");
+        inQueue[msg.sender] = true;
         uint priceInBSW = _getPriceInBSW(busPriceInUSD);
         bswToken.safeTransferFrom(msg.sender, treasuryAddressBus, priceInBSW);
 
-        uint8 busLevel = _randomBusLevel();
-
-        busNFT.mint(msg.sender, busLevel);
+        closeBusQueue(false, 0);
+        busQueue.push(Queue({caller: msg.sender, blockNumber: block.number}));
     }
 
-    function buyPlayer() public notContract nonReentrant whenNotPaused {
+    function buyPlayer() public notContract whenNotPaused {
+        require(!inQueue[msg.sender], "Wait queue");
         require(busNFT.seatsInBuses(msg.sender) > playerNFT.balanceOf(msg.sender), "No free places in buses");
+        inQueue[msg.sender] = true;
         if(checkPeriodPlayerLimits){
             require(playersMintCount[block.timestamp / (6*3600)] < periodLimitPlayers, "Mint over period limit");
             playersMintCount[block.timestamp / (6*3600)]  += 1;
@@ -183,8 +202,8 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         uint priceInBSW = _getPriceInBSW(playerPriceInUSD);
         bswToken.safeTransferFrom(msg.sender, treasuryAddressPlayer, priceInBSW);
 
-        (uint8 rarity, uint128 squidEnergy) = _getRandomPlayer();
-        playerNFT.mint(msg.sender, squidEnergy * 1e18, 0, rarity - 1);
+        closePlayerQueue(false, 0);
+        playerQueue.push(Queue({caller: msg.sender, blockNumber: block.number}));
     }
 
     function getBusTokens(address _user) public view returns(BusToken[] memory){
@@ -223,7 +242,116 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
         timeLeft = 6*3600 - block.timestamp % (6*3600);
     }
 
+    function getQueuesSize() public view returns(uint, uint){
+        return(busQueue.length, playerQueue.length);
+    }
+
+    //limit: Cycle limit per transaction
+    function manuallyCloseBusQueue(uint limit) public whenNotPaused {
+        closeBusQueue(true, limit);
+    }
+
+    function manuallyClosePlayerQueue(uint limit) public whenNotPaused {
+        closePlayerQueue(true, limit);
+    }
+
+    function selfClaimBus() public notContract whenNotPaused {
+        for(uint i = 0; i < busQueue.length; i++){
+            if(busQueue[i].caller == msg.sender){
+                closeBusQueueByIndex(i);
+                return;
+            }
+        }
+    }
+
+    function selfClaimPlayer() public notContract whenNotPaused {
+        for(uint i = 0; i < playerQueue.length; i++){
+            if(playerQueue[i].caller == msg.sender){
+                closePlayerQueueByIndex(i);
+                return;
+            }
+        }
+    }
+
+
     //Internal functions --------------------------------------------------------------------------------------------
+
+    function closeBusQueue(bool allQueue, uint limit) internal {
+        uint queueLength = busQueue.length;
+        uint count = 1;
+        if(queueLength == 0) return;
+        limit = limit == 0 || limit > queueLength ? queueLength : limit;
+        uint i = 0;
+        while(i < limit){
+            if (closeBusQueueByIndex(i)) {
+                if(!allQueue && count == 0) break;
+                count = count == 0 ? 0 : count - 1;
+                limit--;
+            } else {
+                i++;
+                continue;
+            }
+        }
+    }
+
+    function closeBusQueueByIndex(uint index) internal returns(bool){
+        Queue memory _busQueue = busQueue[index];
+        if ( _busQueue.blockNumber >= block.number ) {
+            return false;
+        }
+        if( (block.number - _busQueue.blockNumber) > 255){
+            busQueue[index].blockNumber = block.number;
+            return false;
+        }
+        address user = _busQueue.caller;
+        bytes32 hash = keccak256(abi.encodePacked(user, blockhash(_busQueue.blockNumber)));
+        uint8 busLevel = _randomBusLevel(hash);
+        busQueue[index] = busQueue[busQueue.length - 1];
+        busQueue.pop();
+        busNFT.mint(user, busLevel);
+        inQueue[user] = false;
+        return true;
+    }
+
+    function closePlayerQueue(bool allQueue, uint limit) internal {
+        uint queueLength = playerQueue.length;
+        uint count = 1;
+        if(queueLength == 0) return;
+        limit = limit == 0 || limit > queueLength ? queueLength : limit;
+
+        uint i = 0;
+        while(i < limit){
+            if (closePlayerQueueByIndex(i)) {
+                if(!allQueue && count == 0) break;
+                count = count == 0 ? 0 : count - 1;
+                limit--;
+            } else {
+                i++;
+                continue;
+            }
+        }
+    }
+
+    function closePlayerQueueByIndex(uint index) internal returns(bool){
+        Queue memory _playerQueue = playerQueue[index];
+        if ( _playerQueue.blockNumber >= block.number ) {
+            return false;
+        }
+
+        if( (block.number - _playerQueue.blockNumber) > 255){
+            playerQueue[index].blockNumber = block.number;
+            return false;
+        }
+
+        address user = _playerQueue.caller;
+        bytes32 hash = keccak256(abi.encodePacked(user, blockhash(_playerQueue.blockNumber)));
+        (uint8 rarity, uint128 squidEnergy) = _getRandomPlayer(hash);
+        playerQueue[index] = playerQueue[playerQueue.length - 1];
+        playerQueue.pop();
+        playerNFT.mint(user, squidEnergy * 1e18, 0, rarity - 1);
+        inQueue[user] = false;
+        return true;
+    }
 
     function _isContract(address _addr) internal view returns (bool) {
         uint size;
@@ -239,30 +367,30 @@ contract NFTMinter is Initializable, AccessControlUpgradeable, ReentrancyGuardUp
 
     //Private functions --------------------------------------------------------------------------------------------
 
-    function _getRandomPlayer() private view returns (uint8, uint128) {
+    function _getRandomPlayer(bytes32 hash) private view returns (uint8, uint128) {
         ChanceTablePlayer[] memory _playerChance = playerChance;
-        uint _randomForRarity = _getRandomMinMax(1, playerChancesBase);
+        uint _randomForRarity = _getRandomMinMax(1, playerChancesBase, hash);
         uint count = 0;
         for (uint i = 0; i < _playerChance.length; i++) {
             count += _playerChance[i].chance;
             if (_randomForRarity <= count) {
                 uint8 rarity = _playerChance[i].rarity;
-                uint128 squidEnergy = uint128(_getRandomMinMax(_playerChance[i].minValue, _playerChance[i].maxValue));
+                uint128 squidEnergy = uint128(_getRandomMinMax(_playerChance[i].minValue, _playerChance[i].maxValue, hash));
                 return (rarity, squidEnergy);
             }
         }
         revert("Cant find random level");
     }
 
-    function _getRandomMinMax(uint _min, uint _max) private view returns (uint random) {
+    function _getRandomMinMax(uint _min, uint _max, bytes32 hash) private pure returns (uint random) {
         uint diff = (_max - _min) + 1;
-        random = (uint(keccak256(abi.encodePacked(blockhash(block.number - 1), gasleft()))) % diff) + _min;
+        random = (uint(hash) % diff) + _min;
     }
 
-    function _randomBusLevel() private view returns (uint8) {
+    function _randomBusLevel(bytes32 hash) private view returns (uint8) {
         ChanceTableBus[] memory _busChance = busChance;
 
-        uint _randomForLevel = _getRandomMinMax(1, busChancesBase);
+        uint _randomForLevel = _getRandomMinMax(1, busChancesBase, hash);
         uint64 count = 0;
         for (uint i = 0; i < _busChance.length; i++) {
             count += _busChance[i].chance;

@@ -42,6 +42,7 @@ contract SquidPlayerNFT is
         uint32 createTimestamp;
         bool stakeFreeze;
         string uri;
+        bool contractBought;
     }
 
     mapping(uint => Token) private _tokens; // TokenId => Token
@@ -54,11 +55,13 @@ contract SquidPlayerNFT is
     uint public mintLockDuration; // lock time after mint in seconds
     uint public mintLockStartTime; // timestamp after which mint lock time enabled
 
+    mapping(uint => bool) public contractBought; // Buying player contract tokenId => true/false
+
     event Initialize(string baseURI);
     event TokenMint(address indexed to, uint indexed tokenId, uint8 rarity, uint128 squidEnergy);
     event TokensLock(uint[] _tokenId, uint32 busyTo, uint128[] decreaseSE);
     event SEIncrease(uint[] _tokenId, uint128[] addition);
-    event NewContract(uint[] _tokenId, uint32 contractEndTimestamp);
+    event NewContract(uint[] _tokenId, uint32[] contractEndTimestamp);
     event ChangeSEDivideState(bool state, uint seDivide, uint gracePeriod);
 
     //Initialize function --------------------------------------------------------------------------------------------
@@ -125,6 +128,16 @@ contract SquidPlayerNFT is
         _tokens[_tokenId].stakeFreeze = false;
     }
 
+    function getSEAmountFromTokensId(uint[] calldata _tokenId) external view returns(uint totalSeAmount, uint[] memory tokenSeAmount){
+        totalSeAmount = 0;
+        tokenSeAmount = new uint[](_tokenId.length);
+        for(uint i = 0; i < _tokenId.length; i++){
+            require(_exists(_tokenId[i]), "ERC721: token does not exist");
+            tokenSeAmount[i] = _tokens[_tokenId[i]].squidEnergy;
+            totalSeAmount += _tokens[_tokenId[i]].squidEnergy;
+        }
+    }
+
     //Public functions ----------------------------------------------------------------------------------------------
 
     function supportsInterface(bytes4 interfaceId)
@@ -175,6 +188,7 @@ contract SquidPlayerNFT is
         tokenReturn.stakeFreeze = token.stakeFreeze;
         tokenReturn.createTimestamp = token.createTimestamp;
         tokenReturn.uri = tokenURI(_tokenId);
+        tokenReturn.contractBought = contractBought[_tokenId];
         return (tokenReturn);
     }
 
@@ -197,10 +211,11 @@ contract SquidPlayerNFT is
         return seAmount;
     }
 
-    function setPlayerContract(uint[] calldata tokenId, uint32 contractEndTimestamp, address user) public onlyRole(GAME_ROLE) {
+    function setPlayerContract(uint[] calldata tokenId, uint32 contractDuration, address user) public onlyRole(GAME_ROLE) {
+        uint32[] memory contractEndTimestamp = new uint32[](tokenId.length);
         for (uint i = 0; i < tokenId.length; i++) {
             require(ownerOf(tokenId[i]) == user, "Not owner of token");
-            _setPlayerContract(tokenId[i], contractEndTimestamp);
+            contractEndTimestamp[i] = _setPlayerContract(tokenId[i], contractDuration);
         }
         emit NewContract(tokenId, contractEndTimestamp);
     }
@@ -355,12 +370,18 @@ contract SquidPlayerNFT is
         return (SEAmount, _token.squidEnergy);
     }
 
-    function _setPlayerContract(uint _tokenId, uint32 _contractEndTimestamp) private {
+    function _setPlayerContract(uint _tokenId, uint32 _contractDuration) private returns(uint32 _contractEndTimestamp){
         Token storage _token = _tokens[_tokenId];
-        require(_contractEndTimestamp > block.timestamp, "New contract must be greater than current block");
         require(!_token.stakeFreeze, "Token frozen");
         require(_exists(_tokenId), "ERC721: token does not exist");
-        require(_token.contractEndTimestamp <= block.timestamp, "Previous contract does not finished");
-        _token.contractEndTimestamp = _contractEndTimestamp;
+        require(!contractBought[_tokenId], "Contract already bought");
+        contractBought[_tokenId] = true;
+        if(_token.contractEndTimestamp <= block.timestamp){
+            _contractEndTimestamp = uint32(block.timestamp) + _contractDuration;
+            _token.contractEndTimestamp = _contractEndTimestamp;
+        } else {
+            _contractEndTimestamp = _token.contractEndTimestamp + _contractDuration;
+            _token.contractEndTimestamp = _contractEndTimestamp;
+        }
     }
 }

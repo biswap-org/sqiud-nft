@@ -13,6 +13,7 @@ interface ISquidPlayerNFT {
         uint32 createTimestamp;
         bool stakeFreeze;
         string uri;
+        bool contractBought;
     }
 
     function getToken(uint _tokenId) external view returns (TokensViewFront memory);
@@ -31,7 +32,7 @@ interface ISquidPlayerNFT {
         address user
     ) external returns (uint128);
 
-    function setPlayerContract(uint[] calldata tokenId, uint32 contractEndTimestamp, address user) external;
+    function setPlayerContract(uint[] calldata tokenId, uint32 contractDuration, address user) external;
 
     function squidEnergyDecrease(uint[] calldata tokenId, uint128[] calldata deduction, address user) external;
 
@@ -48,6 +49,8 @@ interface ISquidPlayerNFT {
     function availableSEAmount(address _user) external view returns (uint128 amount);
 
     function totalSEAmount(address _user) external view returns (uint128 amount);
+
+    function getSEAmountFromTokensId(uint[] calldata _tokenId) external view returns(uint totalSeAmount, uint[] memory tokenSeAmount);
 
 
 }
