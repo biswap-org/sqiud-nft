@@ -23,7 +23,7 @@ async function main() {
 
     //Task BSW-1660
     console.log(`Add minter role to owner`)
-    await squidPlayerNFT.grantRole(TOKEN_MINTER_ROLE, owner, {nonce: ++nonce, gasLimit: 3e6});
+    await playerNFT.grantRole(TOKEN_MINTER_ROLE, owner, {nonce: ++nonce, gasLimit: 3e6});
 
     console.log(`Mint player NFT tokens`);
     for(let i = 0;  i < 4; i++){
