@@ -1,7 +1,7 @@
 //npx hardhat run scripts/updateGameParam2002.js --network mainnetBSC
 
 const { ethers, network } = require(`hardhat`);
-const deployedContracts = require('../deployNFTAddresses.json')
+const deployedContracts = require('./deployNFTAddresses.json')
 
 const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 
