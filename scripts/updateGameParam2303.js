@@ -1,4 +1,4 @@
-//npx hardhat run scripts/updateGameParam2002.js --network mainnetBSC
+//npx hardhat run scripts/updateGameParam2303.js --network mainnetBSC
 
 const { ethers, network } = require(`hardhat`);
 const deployedContracts = require('./deployGameAddresses.json')
@@ -8,28 +8,28 @@ const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 const gameNFTAddress = deployedContracts.proxy_mainSquidGame;
 
 let gameNft;
-//22032022
+//23032022
 const tokenRewards = {
     0:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(912,16)] //BSW
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(1142,16)] //BSW
     ],
     1:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(1899,16)] //BSW
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(2377,16)] //BSW
     ],
     2:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(2903,16)] //BSW
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3633,16)] //BSW
     ],
     3:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3916,16)] //BSW
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(4902,16)] //BSW
     ],
     4:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(4959,16)] //BSW
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(6208,16)] //BSW
     ],
     5:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(6046,16)] //BSW
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(7568,16)] //BSW
     ],
     6:[
-        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(7285,16)] //BSW
+        [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(9027,16)] //BSW
     ],
 
 }
