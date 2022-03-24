@@ -6,7 +6,7 @@ const deployedContracts = require('./deployNFTAddresses.json')
 const toBN = (numb, power) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 
 const playerNFTAddress = deployedContracts.proxy_squidPlayerNFT;
-const busNFTAddress = proxy_squidBusNFT;
+const busNFTAddress = deployedContracts.proxy_squidBusNFT;
 const owner = `0xbafefe87d57d4c5187ed9bd5fab496b38abdd5ff`
 const receiverAddress = `0xAA3f6b012fCBb85AA6d6c77B866395B5bD7ffF09`
 const TOKEN_MINTER_ROLE = `0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472`
