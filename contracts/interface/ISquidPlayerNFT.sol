@@ -9,6 +9,7 @@ interface ISquidPlayerNFT {
         uint128 squidEnergy;
         uint128 maxSquidEnergy;
         uint32 contractEndTimestamp;
+        uint32 contractV2EndTimestamp;
         uint32 busyTo; //Timestamp until which the player is busy
         uint32 createTimestamp;
         bool stakeFreeze;
@@ -29,10 +30,11 @@ interface ISquidPlayerNFT {
         uint[] calldata tokenId,
         uint32 busyTo,
         bool willDecrease, //will decrease SE or not
-        address user
+        address user,
+        uint contractVersion
     ) external returns (uint128);
 
-    function setPlayerContract(uint[] calldata tokenId, uint32 contractDuration, address user) external;
+    function setPlayerContract(uint[] calldata tokenId, uint32 contractDuration, address user, uint contractVersion) external;
 
     function squidEnergyDecrease(uint[] calldata tokenId, uint128[] calldata deduction, address user) external;
 
@@ -47,6 +49,8 @@ interface ISquidPlayerNFT {
     function ownerOf(uint tokenId) external view returns (address owner);
 
     function availableSEAmount(address _user) external view returns (uint128 amount);
+
+    function availableSEAmountV2(address _user) external view returns (uint128 amount);
 
     function totalSEAmount(address _user) external view returns (uint128 amount);
 

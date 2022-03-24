@@ -1,6 +1,6 @@
 //npx hardhat flatten ./contracts/NFTMinter.sol > ./temp/flatten/NFTMinterFlatten.sol
 // npx hardhat flatten ./contracts/SquidBusNFT.sol > ./temp/flatten/SquidBusNFTFlatten.sol
-// npx hardhat flatten ./contracts/MainSquidGame.sol > ./temp/flatten/MainSquidGameFlatten.sol
+// npx hardhat flatten ./contracts/MainSquidGameV2.sol > ./temp/flatten/MainSquidGameFlatten.sol
 // npx hardhat flatten ./contracts/SquidPlayerNFT.sol > ./temp/flatten/SquidPlayerNFTFlatten.sol
 
 const hre = require('hardhat');
@@ -9,10 +9,8 @@ const { ethers } = require(`hardhat`);
 // const deployedContractsNFT = require('../deployNFTAddresses.json')
 
 const contractAddresses = [
-    // deployedContractsNFT.proxy_squidPlayerNFT
-    // deployedContracts.proxy_mainSquidGame,
-    // deployedContracts.proxy_nftMinter
-    // '0xb00ED7E3671Af2675c551a1C26Ffdcc5b425359b',
+    '0x6d57712416eD4890e114A37E2D84AB8f9CEe4752',
+    '0xb00ED7E3671Af2675c551a1C26Ffdcc5b425359b',
     '0xCCc78DF56470b70cb901FCc324A8fBbE8Ab5304B',
     '0x17284C1920436Ba331E9Db7e87D372dCDABAc2E5'
 ]

@@ -38,6 +38,7 @@ contract SquidPlayerNFT is
         uint128 squidEnergy;
         uint128 maxSquidEnergy;
         uint32 contractEndTimestamp;
+        uint32 contractV2EndTimestamp;
         uint32 busyTo; //Timestamp until which the player is busy
         uint32 createTimestamp;
         bool stakeFreeze;
@@ -56,6 +57,8 @@ contract SquidPlayerNFT is
     uint public mintLockStartTime; // timestamp after which mint lock time enabled
 
     mapping(uint => bool) public contractBought; // Buying player contract tokenId => true/false
+
+    mapping(uint => uint32) public contractV2EndTimestamp; //TokenId => contractV2EndTimestamp
 
     event Initialize(string baseURI);
     event TokenMint(address indexed to, uint indexed tokenId, uint8 rarity, uint128 squidEnergy);
@@ -184,6 +187,7 @@ contract SquidPlayerNFT is
         tokenReturn.squidEnergy = token.squidEnergy;
         tokenReturn.maxSquidEnergy = _rarityLimitsSE[token.rarity];
         tokenReturn.contractEndTimestamp = token.contractEndTimestamp;
+        tokenReturn.contractV2EndTimestamp = contractV2EndTimestamp[_tokenId];
         tokenReturn.busyTo = token.busyTo;
         tokenReturn.stakeFreeze = token.stakeFreeze;
         tokenReturn.createTimestamp = token.createTimestamp;
@@ -197,25 +201,32 @@ contract SquidPlayerNFT is
         uint[] calldata tokenId,
         uint32 busyTo,
         bool willDecrease, //will decrease SE or not
-        address user
+        address user,
+        uint contractVersion
     ) public onlyRole(GAME_ROLE) returns (uint128) {
         uint128 seAmount;
         uint128[] memory SEAfterDec = new uint128[](tokenId.length);
         for (uint i = 0; i < tokenId.length; i++) {
             require(ownerOf(tokenId[i]) == user, "Not owner of token");
             uint128 curSEAmount;
-            (curSEAmount, SEAfterDec[i]) = _lockToken(tokenId[i], busyTo, willDecrease);
+            (curSEAmount, SEAfterDec[i]) = _lockToken(tokenId[i], busyTo, willDecrease, contractVersion);
             seAmount += curSEAmount;
         }
         emit TokensLock(tokenId, busyTo, SEAfterDec);
         return seAmount;
     }
 
-    function setPlayerContract(uint[] calldata tokenId, uint32 contractDuration, address user) public onlyRole(GAME_ROLE) {
+    function setPlayerContract(uint[] calldata tokenId, uint32 contractDuration, address user, uint contractVersion) public onlyRole(GAME_ROLE) {
         uint32[] memory contractEndTimestamp = new uint32[](tokenId.length);
         for (uint i = 0; i < tokenId.length; i++) {
             require(ownerOf(tokenId[i]) == user, "Not owner of token");
-            contractEndTimestamp[i] = _setPlayerContract(tokenId[i], contractDuration);
+            if(contractVersion == 1){
+                contractEndTimestamp[i] = _setPlayerContract(tokenId[i], contractDuration);
+            } else if(contractVersion == 2){
+                contractEndTimestamp[i] = _setPlayerContractV2(tokenId[i], contractDuration);
+            } else {
+                revert("Wrong contract version");
+            }
         }
         emit NewContract(tokenId, contractEndTimestamp);
     }
@@ -310,6 +321,21 @@ contract SquidPlayerNFT is
         return amount;
     }
 
+    function availableSEAmountV2(address _user) public view returns (uint128 amount) {
+        for (uint i = 0; i < balanceOf(_user); i++) {
+            uint tokenId = tokenOfOwnerByIndex(_user, i);
+            Token memory curToken = _tokens[tokenId];
+            if (
+                contractV2EndTimestamp[tokenId] > block.timestamp &&
+                curToken.busyTo < block.timestamp &&
+                !curToken.stakeFreeze
+            ) {
+                amount += curToken.squidEnergy;
+            }
+        }
+        return amount;
+    }
+
     function totalSEAmount(address _user) public view returns (uint128 amount) {
         for (uint i = 0; i < balanceOf(_user); i++) {
             Token memory curToken = _tokens[tokenOfOwnerByIndex(_user, i)];
@@ -353,13 +379,19 @@ contract SquidPlayerNFT is
 
     //Private functions --------------------------------------------------------------------------------------------
 
-    function _lockToken(uint _tokenId, uint32 _busyTo, bool willDecrease) private returns (uint128 SEAmount, uint128 currentSE) {
+    function _lockToken(uint _tokenId, uint32 _busyTo, bool willDecrease, uint contractVersion) private returns (uint128 SEAmount, uint128 currentSE) {
         require(_exists(_tokenId), "ERC721: token does not exist");
-        require(_busyTo > block.timestamp, "Busy to block must be greater than current block number");
+        require(_busyTo > block.timestamp, "Busy to block must be greater than current block timestamp");
         Token storage _token = _tokens[_tokenId];
         require(!_token.stakeFreeze, "Token frozen");
         require(_token.busyTo < block.timestamp, "Token already busy");
-        require(_token.contractEndTimestamp > block.timestamp, "Token hasnt valid contract");
+        if(contractVersion == 1){
+            require(_token.contractEndTimestamp > block.timestamp, "Token hasnt valid contract");
+        } else if(contractVersion == 2){
+            require(contractV2EndTimestamp[_tokenId] > block.timestamp, "Token hasnt valid contract");
+        } else {
+            revert("Wrong contract version");
+        }
         _token.busyTo = _busyTo;
         bool gracePeriodHasPassed = (block.timestamp - _token.createTimestamp) >= gracePeriod;
         uint128 _seDivide = enableSeDivide && gracePeriodHasPassed && willDecrease ? seDivide : 0;
@@ -373,7 +405,6 @@ contract SquidPlayerNFT is
     function _setPlayerContract(uint _tokenId, uint32 _contractDuration) private returns(uint32 _contractEndTimestamp){
         Token storage _token = _tokens[_tokenId];
         require(!_token.stakeFreeze, "Token frozen");
-        require(_exists(_tokenId), "ERC721: token does not exist");
         require(!contractBought[_tokenId], "Contract already bought");
         contractBought[_tokenId] = true;
         if(_token.contractEndTimestamp <= block.timestamp){
@@ -383,5 +414,13 @@ contract SquidPlayerNFT is
             _contractEndTimestamp = _token.contractEndTimestamp + _contractDuration;
             _token.contractEndTimestamp = _contractEndTimestamp;
         }
+    }
+
+    function _setPlayerContractV2(uint _tokenId, uint32 _contractDuration) private returns(uint32 _contractEndTimestamp){
+        require(!_tokens[_tokenId].stakeFreeze, "Token frozen");
+        require(_tokens[_tokenId].contractEndTimestamp < block.timestamp, "Contract V1 not finished");
+        require(contractV2EndTimestamp[_tokenId] <= uint32(block.timestamp), "Previous contract does not finished");
+        _contractEndTimestamp = uint32(block.timestamp) + _contractDuration;
+        contractV2EndTimestamp[_tokenId] = _contractEndTimestamp;
     }
 }
