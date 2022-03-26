@@ -11,7 +11,7 @@ const { ethers } = require(`hardhat`);
 const contractAddresses = [
     // '0x6d57712416eD4890e114A37E2D84AB8f9CEe4752',
     // '0xb00ED7E3671Af2675c551a1C26Ffdcc5b425359b',
-    '0xCCc78DF56470b70cb901FCc324A8fBbE8Ab5304B',
+    // '0xCCc78DF56470b70cb901FCc324A8fBbE8Ab5304B',
     '0x17284C1920436Ba331E9Db7e87D372dCDABAc2E5'
 ]
 

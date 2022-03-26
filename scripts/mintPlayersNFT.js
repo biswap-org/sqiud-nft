@@ -39,7 +39,6 @@ async function main() {
     // await busNFT.mint(receiverAddress, 5, {nonce: ++nonce, gasLimit: 3e6});
     // await busNFT.mint(receiverAddress, 5, {nonce: ++nonce, gasLimit: 3e6});
     // await busNFT.mint(receiverAddress, 5, {nonce: ++nonce, gasLimit: 3e6});
-console.log()
 }
 
 main()
