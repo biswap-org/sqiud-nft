@@ -26,7 +26,7 @@ async function main() {
             toWei(30),  //minStakeAmount
             8900, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(742,16)],//BSW
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(706,16)],//BSW
                 [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(20, 18)] //BFG
             ],
             `Destiny Marbles`, //game name
@@ -37,7 +37,7 @@ async function main() {
             toWei(50),  //minStakeAmount
             8800, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(1545,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(1471,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
                 [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(40, 18)] //BFG
             ],
             `Slippery Rope`, //game name
@@ -48,7 +48,7 @@ async function main() {
             toWei(80),  //minStakeAmount
             8700, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(2361,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(2248,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
                 [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(65, 18)] //BFG
             ],
             `Red Light, Blue Light`, //game name
@@ -59,7 +59,7 @@ async function main() {
             toWei(100),  //minStakeAmount
             8600, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3186,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3034,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
                 [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(90, 18)] //BFG
             ],
             `Flip-Flop Envelopes`, //game name
@@ -70,7 +70,7 @@ async function main() {
             toWei(120),  //minStakeAmount
             8500, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(4035,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3842,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
                 [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(110, 18)] //BFG
             ],
             `Killing Sweets`, //game name
@@ -81,7 +81,7 @@ async function main() {
             toWei(150),  //minStakeAmount
             8400, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(4919,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(4684,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
                 [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(135, 18)] //BFG
             ],
             `Crowned Peak`, //game name
@@ -92,7 +92,7 @@ async function main() {
             toWei(200),  //minStakeAmount
             8300, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(5867,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(5587,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
                 [`0xbb46693ebbea1ac2070e59b4d043b47e2e095f86`, 0, toBN(160, 18)] //BFG
             ],
             `Rock-Paper-Scissors`, //game name
