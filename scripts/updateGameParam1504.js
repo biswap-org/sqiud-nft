@@ -20,13 +20,13 @@ async function main() {
     gameNft = await GameNft.attach(gameNFTAddress);
 
 
-    const gamesV1 = {
+    const gamesV2 = {
         0: [
-            toWei(900),  //minSeAmount
+            toWei(1000),  //minSeAmount
             toWei(30),  //minStakeAmount
-            8900, //chanceToWin; base 10000
+            9900, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(707,16)]//BSW
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(731,16)], //rewardTokens: [address, rewardInUSD, rewardInToken]
             ],
             `Destiny Marbles`, //game name
             true //Enabled
@@ -34,9 +34,9 @@ async function main() {
         1: [
             toWei(2000),  //minSeAmount
             toWei(50),  //minStakeAmount
-            8800, //chanceToWin; base 10000
+            9800, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(1471,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(1371,16)],
             ],
             `Slippery Rope`, //game name
             true //Enabled
@@ -44,9 +44,9 @@ async function main() {
         2: [
             toWei(3000),  //minSeAmount
             toWei(80),  //minStakeAmount
-            8700, //chanceToWin; base 10000
+            9700, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(2248,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(2028,16)],
             ],
             `Red Light, Blue Light`, //game name
             true //Enabled
@@ -54,9 +54,9 @@ async function main() {
         3: [
             toWei(4000),  //minSeAmount
             toWei(100),  //minStakeAmount
-            8600, //chanceToWin; base 10000
+            9600, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3034,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(2706,16)],
             ],
             `Flip-Flop Envelopes`, //game name
             true //Enabled
@@ -64,9 +64,9 @@ async function main() {
         4: [
             toWei(5000),  //minSeAmount
             toWei(120),  //minStakeAmount
-            8500, //chanceToWin; base 10000
+            9500, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3843,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3416,16)],
             ],
             `Killing Sweets`, //game name
             true //Enabled
@@ -74,9 +74,9 @@ async function main() {
         5: [
             toWei(6000),  //minSeAmount
             toWei(150),  //minStakeAmount
-            8400, //chanceToWin; base 10000
+            9400, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(4685,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(4157,16)],
             ],
             `Crowned Peak`, //game name
             true //Enabled
@@ -84,18 +84,19 @@ async function main() {
         6: [
             toWei(7000),  //minSeAmount
             toWei(200),  //minStakeAmount
-            8300, //chanceToWin; base 10000
+            9300, //chanceToWin; base 10000
             [
-                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(5588,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(4920,16)],
             ],
             `Rock-Paper-Scissors`, //game name
             true //Enabled
         ]
     }
 
-    console.log(`Change gamesV1 parameters`);
-    for(let i in gamesV1){
-        await gameNft.setGameParameters(i, gamesV1[i], 1, {nonce: ++nonce, gasLimit: 3e6})
+
+    console.log(`Change gamesV2 parameters`);
+    for(let i in gamesV2){
+        await gameNft.setGameParameters(i, gamesV2[i], 1, {nonce: ++nonce, gasLimit: 3e6})
         console.log(`Game #${i} parameters changed`)
     }
     console.log(`Done`)
