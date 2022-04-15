@@ -20,6 +20,79 @@ async function main() {
     gameNft = await GameNft.attach(gameNFTAddress);
 
 
+    const gamesV1 = {
+        0: [
+            toWei(900),  //minSeAmount
+            toWei(30),  //minStakeAmount
+            8900, //chanceToWin; base 10000
+            [
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(707,16)]//BSW
+            ],
+            `Destiny Marbles`, //game name
+            true //Enabled
+        ],
+        1: [
+            toWei(2000),  //minSeAmount
+            toWei(50),  //minStakeAmount
+            8800, //chanceToWin; base 10000
+            [
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(1471,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+            ],
+            `Slippery Rope`, //game name
+            true //Enabled
+        ],
+        2: [
+            toWei(3000),  //minSeAmount
+            toWei(80),  //minStakeAmount
+            8700, //chanceToWin; base 10000
+            [
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(2248,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+            ],
+            `Red Light, Blue Light`, //game name
+            true //Enabled
+        ],
+        3: [
+            toWei(4000),  //minSeAmount
+            toWei(100),  //minStakeAmount
+            8600, //chanceToWin; base 10000
+            [
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3034,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+            ],
+            `Flip-Flop Envelopes`, //game name
+            true //Enabled
+        ],
+        4: [
+            toWei(5000),  //minSeAmount
+            toWei(120),  //minStakeAmount
+            8500, //chanceToWin; base 10000
+            [
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(3843,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+            ],
+            `Killing Sweets`, //game name
+            true //Enabled
+        ],
+        5: [
+            toWei(6000),  //minSeAmount
+            toWei(150),  //minStakeAmount
+            8400, //chanceToWin; base 10000
+            [
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(4685,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+            ],
+            `Crowned Peak`, //game name
+            true //Enabled
+        ],
+        6: [
+            toWei(7000),  //minSeAmount
+            toWei(200),  //minStakeAmount
+            8300, //chanceToWin; base 10000
+            [
+                [`0x965f527d9159dce6288a2219db51fc6eef120dd1`, 0, toBN(5588,16)] //rewardTokens: [address, rewardInUSD, rewardInToken]
+            ],
+            `Rock-Paper-Scissors`, //game name
+            true //Enabled
+        ]
+    }
+
     const gamesV2 = {
         0: [
             toWei(1000),  //minSeAmount
@@ -96,7 +169,7 @@ async function main() {
 
     console.log(`Change gamesV2 parameters`);
     for(let i in gamesV2){
-        await gameNft.setGameParameters(i, gamesV2[i], 1, {nonce: ++nonce, gasLimit: 3e6})
+        await gameNft.setGameParameters(i, gamesV2[i], 2, {nonce: ++nonce, gasLimit: 3e6})
         console.log(`Game #${i} parameters changed`)
     }
     console.log(`Done`)
