@@ -34,7 +34,7 @@ module.exports = {
 			accounts: { mnemonic: mnemonic }
 		},
 		mainnetBSC: {
-			url: "https://speedy-nodes-nyc.moralis.io/24c4434d22106f7847dc3f82/bsc/mainnet/archive", //"https://speedy-nodes-nyc.moralis.io/3ad31c74f70f3d5894c50440/bsc/mainnet",// "http://68.183.66.58:8545" //"https://bsc-dataseed.binance.org/", //"https://speedy-nodes-nyc.moralis.io/3ad31c74f70f3d5894c50440/bsc/mainnet",
+			url: "https://bsc-dataseed.binance.org/", //"https://speedy-nodes-nyc.moralis.io/3ad31c74f70f3d5894c50440/bsc/mainnet",// "http://68.183.66.58:8545" //"https://bsc-dataseed.binance.org/", //"https://speedy-nodes-nyc.moralis.io/3ad31c74f70f3d5894c50440/bsc/mainnet",
 			chainId: 56,
 			gasPrice: 30e9,
 			accounts: [privatKey]
