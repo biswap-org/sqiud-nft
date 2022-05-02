@@ -445,7 +445,7 @@ contract SquidWorkerGame is Initializable, AccessControlUpgradeable, ReentrancyG
         if (_queue.blockNumber >= block.number) {
             return false;
         }
-        if ((block.number - 255) > _queue.blockNumber) {
+        if (block.number > _queue.blockNumber + 255) {
             queue[index].blockNumber = uint32(block.number);
             return false;
         }
