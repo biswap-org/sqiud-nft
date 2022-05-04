@@ -112,6 +112,10 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     Game[] public gamesV2;
     PlayerContract[] public playerContractsV2;
 
+    bool checkPeriodContractLimits;
+    uint contractsLimit;
+    mapping(uint => uint) public contractsCount; //Count buying contracts every 6 hours
+
     event GameAdded(uint gameIndex, uint contractVersion);
     event GameDisable(uint gameIndex);
     event GameEnable(uint gameIndex);
@@ -166,6 +170,11 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     }
 
     //External functions --------------------------------------------------------------------------------------------
+
+    function setPeriodLimitContracts(uint newLimit, bool enabled)  external onlyRole(DEFAULT_ADMIN_ROLE) {
+        contractsLimit = newLimit;
+        checkPeriodContractLimits = enabled;
+    }
 
     function changePlayerContract(uint _pcIndex, uint contractVersion, PlayerContract calldata _playerContract) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if(contractVersion == 1){
@@ -334,6 +343,10 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     function buyContractsV2(uint[] memory _tokensId, uint _contractIndex) public notContract whenNotPaused nonReentrant {
         require(_tokensId.length > 0, "Cant by contracts without tokensId");
         require(_contractIndex < playerContractsV2.length, "Wrong index out of bound");
+        if(checkPeriodContractLimits){
+            contractsCount[block.timestamp / 6 hours] += _tokensId.length;
+            require(contractsCount[block.timestamp / 6 hours] <= contractsLimit, "Contracts limit reached");
+        }
         (uint totalCost,) = getContractV2Cost(_tokensId, _contractIndex);
         IERC20Upgradeable(bswToken).safeTransferFrom(msg.sender, treasuryAddress, totalCost);
         playerNFT.setPlayerContract(_tokensId, playerContractsV2[_contractIndex].duration, msg.sender, 2);
@@ -367,6 +380,12 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
             (, contractCost[i]) = getContractV2Cost(playersId, i);
         }
         return(playersId, contractCost);
+    }
+
+    function getLimitContractsParameters() public view returns(uint totalLimit, uint contractsOnPeriod, uint timeLeft){
+        totalLimit = contractsLimit;
+        contractsOnPeriod = contractsCount[block.timestamp / 6 hours];
+        timeLeft = 6 hours - block.timestamp % (6 hours);
     }
 
     function userInfo(address _user) public view returns (UserInfo memory) {
