@@ -116,6 +116,10 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint contractsLimit;
     mapping(uint => uint) public contractsCount; //Count buying contracts every 6 hours
 
+    uint limitContractsPerUser; //Limit contracts per period per user
+    uint minStakeForContracts; //minimum staked amount on holder pool to buy contracts
+    mapping(address => mapping(uint => uint)) contractsCountPerUser; //Contracts count per user per period
+
     event GameAdded(uint gameIndex, uint contractVersion);
     event GameDisable(uint gameIndex);
     event GameEnable(uint gameIndex);
@@ -171,8 +175,15 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     //External functions --------------------------------------------------------------------------------------------
 
-    function setPeriodLimitContracts(uint newLimit, bool enabled)  external onlyRole(DEFAULT_ADMIN_ROLE) {
-        contractsLimit = newLimit;
+    function setPeriodLimitContracts(
+        uint _contractsLimit,
+        uint _limitContractsPerUser,
+        uint _minStakeForContracts,
+        bool enabled
+    )  external onlyRole(DEFAULT_ADMIN_ROLE) {
+        contractsLimit = _contractsLimit;
+        limitContractsPerUser = _limitContractsPerUser;
+        minStakeForContracts = _minStakeForContracts;
         checkPeriodContractLimits = enabled;
     }
 
@@ -345,7 +356,11 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         require(_contractIndex < playerContractsV2.length, "Wrong index out of bound");
         if(checkPeriodContractLimits){
             contractsCount[block.timestamp / 6 hours] += _tokensId.length;
+            contractsCountPerUser[msg.sender][block.timestamp / 6 hours] += _tokensId.length;
+            uint autoBSWBalance = autoBsw.balanceOf() * autoBsw.userInfo(msg.sender).shares / autoBsw.totalShares();
             require(contractsCount[block.timestamp / 6 hours] <= contractsLimit, "Contracts limit reached");
+            require(contractsCountPerUser[msg.sender][block.timestamp / 6 hours] <= limitContractsPerUser, "Contracts limit per user reached");
+            require(autoBSWBalance >= minStakeForContracts, "Need more stake in pools");
         }
         (uint totalCost,) = getContractV2Cost(_tokensId, _contractIndex);
         IERC20Upgradeable(bswToken).safeTransferFrom(msg.sender, treasuryAddress, totalCost);
@@ -382,10 +397,18 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         return(playersId, contractCost);
     }
 
-    function getLimitContractsParameters() public view returns(uint totalLimit, uint contractsOnPeriod, uint timeLeft){
+    function getLimitContractsParameters(address _user) public view returns(
+        uint totalLimit,
+        uint contractsOnPeriod,
+        uint userBoutOnPeriod,
+        uint limitPerUser,
+        uint timeLeft
+    ){
         totalLimit = contractsLimit;
         contractsOnPeriod = contractsCount[block.timestamp / 6 hours];
         timeLeft = 6 hours - block.timestamp % (6 hours);
+        userBoutOnPeriod = contractsCountPerUser[_user][block.timestamp / 6 hours];
+        limitPerUser = limitContractsPerUser;
     }
 
     function userInfo(address _user) public view returns (UserInfo memory) {
