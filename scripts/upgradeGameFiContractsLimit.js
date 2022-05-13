@@ -7,6 +7,8 @@ const gameAddress = deployedGameContracts.proxy_mainSquidGame
 
 let game;
 
+const toWei = n => ethers.BigNumber.from(10).pow(18).mul(n);
+
 async function main() {
     const [deployer] = await ethers.getSigners();
     console.log(`Deployer address: ${ deployer.address}`);
@@ -21,8 +23,14 @@ async function main() {
     console.log(`Main game upgraded`);
 
     console.log(`Set contracts limit`);
-    await game.setPeriodLimitContracts(1000000, true, {nonce: ++nonce, gasLimit: 5e6});
+    await game.setPeriodLimitContracts(500, 1, toWei(30), true, {nonce: ++nonce, gasLimit: 5e6});
 
+// function setPeriodLimitContracts(
+//         uint _contractsLimit,
+//         uint _limitContractsPerUser,
+//         uint _minStakeForContracts,
+//         bool enabled
+//     )
 }
 
 main()
