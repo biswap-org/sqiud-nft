@@ -16,12 +16,12 @@ async function main() {
 
     const Game = await ethers.getContractFactory(`MainSquidGame`);
 
-    console.log(`Start deploying upgrade NFT game contract`);
-    game = await upgrades.upgradeProxy(gameAddress, Game, {nonce: ++nonce, gasLimit: 5e6});
-    await game.deployed();
-    nonce++;
-    console.log(`Main game upgraded`);
-
+    // console.log(`Start deploying upgrade NFT game contract`);
+    // game = await upgrades.upgradeProxy(gameAddress, Game, {nonce: ++nonce, gasLimit: 5e6});
+    // await game.deployed();
+    // nonce++;
+    // console.log(`Main game upgraded`);
+    game = await Game.attach(gameAddress);
     console.log(`Set contracts limit`);
     await game.setPeriodLimitContracts(500, 1, toWei(30), true, {nonce: ++nonce, gasLimit: 5e6});
 
