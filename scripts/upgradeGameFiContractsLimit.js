@@ -27,7 +27,7 @@ async function main() {
 
     //Set contracts cost & limits
     const playerContractsV2 = {
-        0: [15*24*3600, toBN(36525, 12), true], //15 days 0,035625 BSW
+        0: [15*24*3600, toBN(35625, 12), true], //15 days 0,035625 BSW
         1: [30*24*3600, toBN(7125, 13), true], //30 days 0.07125 BSW
     }
 
@@ -37,9 +37,9 @@ async function main() {
         console.log(` - Player contract ${i} changed to ${playerContractsV2[i]}`);
     }
 
-    console.log(`Set contracts limit`);
-    await game.setPeriodLimitContracts(81900, toBN(30), true, {nonce: ++nonce, gasLimit: 5e6});
-    console.log(`Contracts limits changed`)
+    // console.log(`Set contracts limit`);
+    // await game.setPeriodLimitContracts(81900, toBN(30), true, {nonce: ++nonce, gasLimit: 5e6});
+    // console.log(`Contracts limits changed`)
 
 }
 
