@@ -136,7 +136,6 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         ISquidBusNFT _busNFT,
         ISquidPlayerNFT _playerNFT,
         IOracle _oracle,
-        IMasterChef _masterChef,
         IautoBsw _autoBsw,
         address _treasuryAddress,
         uint _recoveryTime
@@ -177,12 +176,10 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     function setPeriodLimitContracts(
         uint _contractsLimit,
-        uint _limitContractsPerUser,
         uint _minStakeForContracts,
         bool enabled
     )  external onlyRole(DEFAULT_ADMIN_ROLE) {
         contractsLimit = _contractsLimit;
-        limitContractsPerUser = _limitContractsPerUser;
         minStakeForContracts = _minStakeForContracts;
         checkPeriodContractLimits = enabled;
     }
@@ -355,11 +352,9 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         require(_tokensId.length > 0, "Cant by contracts without tokensId");
         require(_contractIndex < playerContractsV2.length, "Wrong index out of bound");
         if(checkPeriodContractLimits){
-            contractsCount[block.timestamp / 6 hours] += _tokensId.length;
-            contractsCountPerUser[msg.sender][block.timestamp / 6 hours] += _tokensId.length;
+            contractsCount[0] += _tokensId.length;
             uint autoBSWBalance = autoBsw.balanceOf() * autoBsw.userInfo(msg.sender).shares / autoBsw.totalShares();
-            require(contractsCount[block.timestamp / 6 hours] <= contractsLimit, "Contracts limit reached");
-            require(contractsCountPerUser[msg.sender][block.timestamp / 6 hours] <= limitContractsPerUser, "Contracts limit per user reached");
+            require(contractsCount[0] <= contractsLimit, "Contracts limit reached");
             require(autoBSWBalance >= minStakeForContracts, "Need more stake in pools");
         }
         (uint totalCost,) = getContractV2Cost(_tokensId, _contractIndex);
@@ -397,18 +392,14 @@ contract MainSquidGame is Initializable, AccessControlUpgradeable, ReentrancyGua
         return(playersId, contractCost);
     }
 
-    function getLimitContractsParameters(address _user) public view returns(
+    function getLimitContractsParameters() public view returns(
         uint totalLimit,
         uint contractsOnPeriod,
-        uint userBoutOnPeriod,
-        uint limitPerUser,
-        uint timeLeft
+        uint _minStakeForContracts
     ){
         totalLimit = contractsLimit;
-        contractsOnPeriod = contractsCount[block.timestamp / 6 hours];
-        timeLeft = 6 hours - block.timestamp % (6 hours);
-        userBoutOnPeriod = contractsCountPerUser[_user][block.timestamp / 6 hours];
-        limitPerUser = limitContractsPerUser;
+        contractsOnPeriod = contractsCount[0];
+        _minStakeForContracts = minStakeForContracts;
     }
 
     function userInfo(address _user) public view returns (UserInfo memory) {

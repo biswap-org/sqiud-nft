@@ -120,8 +120,8 @@ contract NFTClaimer is Ownable, Pausable, ReentrancyGuard {
     function onERC721Received(
         address _operator,
         address _from,
-        uint256 _tokenId,
-        bytes calldata _data
+        uint256 _tokenId //,
+//        bytes calldata _data
     ) public nonReentrant whenNotPaused returns (bytes4) {
         require(_operator == address(this), "Only this contract can send token");
         require(address(msg.sender) == address(vouchers), "Token not allowed");

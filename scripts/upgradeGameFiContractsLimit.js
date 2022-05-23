@@ -7,7 +7,7 @@ const gameAddress = deployedGameContracts.proxy_mainSquidGame
 
 let game;
 
-const toWei = n => ethers.BigNumber.from(10).pow(18).mul(n);
+const toBN = (numb, power= 18) =>  ethers.BigNumber.from(10).pow(power).mul(numb);
 
 async function main() {
     const [deployer] = await ethers.getSigners();
@@ -16,21 +16,31 @@ async function main() {
 
     const Game = await ethers.getContractFactory(`MainSquidGame`);
 
-    // console.log(`Start deploying upgrade NFT game contract`);
-    // game = await upgrades.upgradeProxy(gameAddress, Game, {nonce: ++nonce, gasLimit: 5e6});
-    // await game.deployed();
-    // nonce++;
-    // console.log(`Main game upgraded`);
-    game = await Game.attach(gameAddress);
-    console.log(`Set contracts limit`);
-    await game.setPeriodLimitContracts(500, 1, toWei(30), true, {nonce: ++nonce, gasLimit: 5e6});
+    console.log(`Start deploying upgrade NFT game contract`);
+    game = await upgrades.upgradeProxy(gameAddress, Game, {nonce: ++nonce, gasLimit: 5e6});
+    await game.deployed();
+    nonce++;
+    console.log(`Main game upgraded`);
 
-// function setPeriodLimitContracts(
-//         uint _contractsLimit,
-//         uint _limitContractsPerUser,
-//         uint _minStakeForContracts,
-//         bool enabled
-//     )
+
+    // game = await Game.attach(gameAddress);
+    //
+    // //Set contracts cost & limits
+    // const playerContractsV2 = {
+    //     0: [15*24*3600, toBN(375, 14), true], //15 days 0.0375 BSW
+    //     1: [30*24*3600, toBN(7125, 13), true], //30 days 0.07125 BSW
+    // }
+    //
+    // console.log(`Set new contract V2 prices:`);
+    // for(let i in playerContractsV2){
+    //     await game.changePlayerContract(i, playerContractsV2[i], 2, {nonce: ++nonce, gasLimit: 3e6});
+    //     console.log(` - Player contract ${i} changed to ${playerContractsV2[i]}`);
+    // }
+    //
+    // console.log(`Set contracts limit`);
+    // await game.setPeriodLimitContracts(81900, toBN(30), true, {nonce: ++nonce, gasLimit: 5e6});
+    // console.log(`Contracts limits changed`)
+
 }
 
 main()
